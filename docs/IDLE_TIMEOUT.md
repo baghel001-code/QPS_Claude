@@ -32,7 +32,24 @@ A user with no mouse, keyboard, touch or scroll activity for `MaxSessionTime` mi
    "MaxSessionTime": 30,
    "UserRevalidateInSeconds": 60
    ```
-4. **Optional**: have the logout page carry `reason=idle` over to the login page and show
+4. **Absolute session lifetime (`session_expires` claim)**. This forces a re-login after N hours
+   even for active users. Cookie auth has no `exp` claim, so the app issues its own:
+   - `CustomClaimTypes`:
+     ```csharp
+     public const string SessionExpires = "session_expires";
+     ```
+   - `AppConfigurationSettings`:
+     ```csharp
+     public int AbsoluteSessionHours { get; set; } = 12;
+     ```
+   - `appsettings.json` → `"AbsoluteSessionHours": 12`
+   - Login page, where the claims are built before `SignInAsync`:
+     ```csharp
+     claims.Add(new Claim(CustomClaimTypes.SessionExpires,
+         DateTimeOffset.UtcNow.AddHours(_settings.AbsoluteSessionHours).ToUnixTimeSeconds().ToString()));
+     ```
+   Users who signed in before this change have no claim and are not affected until their next login.
+5. **Optional**: have the logout page carry `reason=idle` over to the login page and show
    *"You were logged out after 30 minutes of inactivity."*
 
 ## Tuning

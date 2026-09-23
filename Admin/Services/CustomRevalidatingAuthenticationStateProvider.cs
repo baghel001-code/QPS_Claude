@@ -96,13 +96,15 @@ namespace Admin.Services
 
         private async Task<bool> ValidateUserAsync(IServiceProvider serviceProvider, ClaimsPrincipal user, CancellationToken cancellationToken)
         {
-            // Absolute expiry claim issued at login (if any). Note: this is a fixed lifetime from
-            // login, not an idle timeout — claims inside a circuit never slide.
-            var expClaim = user.FindFirst("exp")?.Value;
-            if (!string.IsNullOrEmpty(expClaim) && long.TryParse(expClaim, out var expUnix))
+            // Absolute session lifetime issued at login (AppConfigurationSettings:AbsoluteSessionHours).
+            // Fixed from login and never slides, so it forces a re-login even for active users.
+            // Cookie auth has no "exp" claim (that is a JWT concept), hence our own claim.
+            // Missing claim = session issued before this was deployed; let it through.
+            var sessionExpiresClaim = user.FindFirst(CustomClaimTypes.SessionExpires)?.Value;
+            if (!string.IsNullOrEmpty(sessionExpiresClaim) && long.TryParse(sessionExpiresClaim, out var expiresUnix))
             {
-                var expiry = DateTimeOffset.FromUnixTimeSeconds(expUnix);
-                if (expiry < DateTimeOffset.UtcNow)
+                var expiry = DateTimeOffset.FromUnixTimeSeconds(expiresUnix);
+                if (expiry <= DateTimeOffset.UtcNow)
                 {
                     _invalidationState.Reason = SessionInvalidReason.Expired;
                     return false;
