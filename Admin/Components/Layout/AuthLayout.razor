@@ -15,12 +15,10 @@
 <div class="qps-auth">
     <aside class="qps-brand">
         <div class="qps-brand-top">
-            @* To use the official logo: put it at wwwroot/images/vmm-logo.png and replace this block with
-               <img src="images/vmm-logo.png" alt="Vishal Mega Mart" class="qps-logo-img" /> *@
-            <div class="qps-logo" aria-hidden="true">Q</div>
-            <div>
+            <span class="qps-logo-chip"><img src="images/vmm-logo.png" alt="Vishal Mega Mart" class="qps-logo-img" /></span>
+            <div class="qps-product">
                 <div class="qps-wordmark">QPS</div>
-                <div class="qps-company">Vishal Mega Mart</div>
+                <div class="qps-company">Quality portal</div>
             </div>
         </div>
 
@@ -46,15 +44,15 @@
 </div>
 
 @code {
-    // Same colours as --qps-primary / --qps-accent in auth.css.
+    // Same colours as the --qps-* variables in auth.css (taken from the Vishal Mega Mart logo).
     private readonly MudTheme _theme = new()
     {
         PaletteLight = new PaletteLight
         {
-            Primary = "#16456b",
-            Secondary = "#f2a516",
-            Success = "#1f9d74",
-            AppbarBackground = "#16456b",
+            Primary = "#d4007c",           // deeper logo pink (white text 5.1:1)
+            Secondary = "#0f6cb1",         // logo blue
+            Tertiary = "#ed018b",          // logo pink
+            AppbarBackground = "#ed018b",
         },
         LayoutProperties = new LayoutProperties { DefaultBorderRadius = "8px" },
     };
