@@ -1,8 +1,9 @@
 /* Account pages (login, forgot, reset, logout). Change the brand colours here. */
 .qps-auth {
     /* Vishal Mega Mart brand colours, sampled from the logo */
-    --qps-brand: #ed018b;        /* logo pink: brand panel */
-    --qps-brand-dark: #b8006c;   /* panel gradient end */
+    --qps-brand: #ed018b;        /* logo pink: highlights */
+    --qps-panel: #0f6cb1;        /* logo blue: brand panel */
+    --qps-panel-dark: #0a4a7d;   /* panel gradient end */
     --qps-primary: #d4007c;      /* buttons/links: deeper pink so white text passes contrast (5.1:1) */
     --qps-blue: #0f6cb1;         /* logo blue: accents, ticks */
     --qps-accent: #0f6cb1;
@@ -33,9 +34,9 @@
     padding: 40px 48px;
     color: #fff;
     background:
-        radial-gradient(circle at 88% 10%, rgba(15, 108, 177, .45) 0, transparent 40%),
-        radial-gradient(circle at 5% 95%, rgba(255, 255, 255, .14) 0, transparent 38%),
-        linear-gradient(160deg, var(--qps-brand) 0%, var(--qps-brand-dark) 100%);
+        radial-gradient(circle at 88% 10%, rgba(237, 1, 139, .35) 0, transparent 40%),
+        radial-gradient(circle at 5% 95%, rgba(255, 255, 255, .12) 0, transparent 38%),
+        linear-gradient(160deg, var(--qps-panel) 0%, var(--qps-panel-dark) 100%);
     overflow: hidden;
 }
 /* faint grid, like a warehouse floor plan */
@@ -55,7 +56,7 @@
 .qps-logo-chip {
     display: inline-flex; align-items: center;
     background: #fff; border-radius: 10px; padding: 6px 10px;
-    box-shadow: 0 6px 16px rgba(80, 0, 45, .25);
+    box-shadow: 0 6px 16px rgba(0, 30, 60, .3);
 }
 .qps-logo-img { height: 36px; width: auto; display: block; }
 .qps-product { border-left: 1px solid rgba(255,255,255,.45); padding-left: 12px; }
@@ -70,12 +71,12 @@
 }
 .qps-features { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 15px; }
 .qps-features li { display: flex; align-items: center; gap: 10px; opacity: .92; }
-.qps-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(15,108,177,.55); flex: none; }
+.qps-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(237,1,139,.6); flex: none; }
 .qps-brand-foot { font-size: 12px; opacity: .8; }
 
 /* ---------- illustration ---------- */
 .qps-art { width: 100%; max-width: 460px; height: auto; }
-.qps-art .a-shadow { fill: rgba(60, 0, 35, .28); }
+.qps-art .a-shadow { fill: rgba(0, 25, 50, .3); }
 .qps-art .a-box { fill: var(--qps-kraft); }
 .qps-art .a-box-top { fill: var(--qps-kraft-dark); }
 .qps-art .a-tape { fill: #e3c393; }
@@ -93,7 +94,7 @@
 .qps-art .a-lens { fill: rgba(255,255,255,.22); }
 .qps-art .a-ring { fill: none; stroke: #e8edf3; stroke-width: 8; }
 .qps-art .a-handle { stroke: #e8edf3; stroke-width: 12; stroke-linecap: round; }
-.qps-art .a-stamp-bg { fill: var(--qps-blue); }
+.qps-art .a-stamp-bg { fill: var(--qps-brand); }
 .qps-art .a-stamp-ring { fill: none; stroke: #ffffff; stroke-width: 4; }
 .qps-art .a-stamp-ring.thin { stroke-width: 1.5; }
 .qps-art .a-stamp-text { fill: #ffffff; font: 800 20px "Segoe UI", system-ui, sans-serif; letter-spacing: 2px; }
