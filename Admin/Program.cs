@@ -121,19 +121,25 @@ builder.Services.AddSession(options =>
 });
 builder.Services.AddCascadingAuthenticationState();
 //builder.Services.AddAuthorizationCore();
+// Paths the fallback policy lets through without a login. Add an entry here for any endpoint
+// you cannot put [AllowAnonymous] on (framework/library endpoints, plain files, health checks).
+// Matching is by path segment: "/_blazor" covers "/_blazor/negotiate" but not "/_blazorx".
+string[] anonymousPaths =
+[
+    "/_framework",          // blazor.web.js (served by an endpoint, not UseStaticFiles)
+    "/_blazor",             // Blazor circuit hub; pages still enforce their own [Authorize]
+    "/service-worker.js",
+];
+
 builder.Services.AddAuthorizationCore(options =>
 {
     // Every endpoint without its own [Authorize]/[AllowAnonymous] needs a signed-in user,
-    // EXCEPT the Blazor framework endpoints. /_framework/blazor.web.js is served by an endpoint
-    // (not UseStaticFiles), so without this exemption the login page gets a 302 to
-    // /Account/Login instead of the script ("MIME type 'text/html' is not executable").
+    // except the paths in anonymousPaths.
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAssertion(ctx =>
             ctx.User.Identity?.IsAuthenticated == true ||
             (ctx.Resource is HttpContext http &&
-             (http.Request.Path.StartsWithSegments("/_framework") ||
-              http.Request.Path.StartsWithSegments("/_blazor") ||
-              http.Request.Path.StartsWithSegments("/service-worker.js"))))
+             anonymousPaths.Any(p => http.Request.Path.StartsWithSegments(p))))
         .Build();
 });
 builder.Services.AddScoped<Application.Services.MenuService>();
