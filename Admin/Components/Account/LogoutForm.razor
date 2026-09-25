@@ -33,8 +33,15 @@
         if (!_submitPending)
             return;
         _submitPending = false;
-        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/auth.js");
-        await _module.InvokeVoidAsync("submitForm", _formId);
+        try
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/auth.js");
+            await _module.InvokeVoidAsync("submitForm", _formId);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or JSException or TaskCanceledException)
+        {
+            // Browser unreachable right now; the caller may retry (IdleTimeoutMonitor does every 5 s).
+        }
     }
 
     public async ValueTask DisposeAsync()

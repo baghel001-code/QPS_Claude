@@ -131,13 +131,23 @@ login/logout pages, otherwise two handlers compete.
 }
 ```
 
-In a layout, for the user menu and the idle-timeout monitor:
+Sign-out menu in `MainLayout.razor` (the layout must be interactive):
 
 ```razor
+@using Admin.Components.Account
+
+<MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit">
+    <MudMenuItem OnClick="SignOutAsync">Sign out</MudMenuItem>
+</MudMenu>
 <LogoutForm @ref="_logout" />
-<MudMenuItem OnClick="() => _logout.SubmitAsync()">Sign out</MudMenuItem>
-@* idle timeout: await _logout.SubmitAsync("idle"); *@
+
+@code {
+    private LogoutForm _logout = default!;
+    private Task SignOutAsync() => _logout.SubmitAsync();
+}
 ```
+
+`IdleTimeoutMonitor.razor` already contains its own `LogoutForm` and submits it with reason `idle`.
 
 ## Database (implement `IAuthUserStore`)
 
