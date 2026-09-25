@@ -1,0 +1,14 @@
+@page "/Account/Access-Denied"
+@layout Admin.Components.Layout.AuthLayout
+@attribute [AllowAnonymous]
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+
+<PageTitle>Access denied</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-2">Access denied</MudText>
+<MudText Class="mb-6">Your account doesn't have permission to open that page.</MudText>
+<MudStack Row="true">
+    <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary">Go to home</MudButton>
+    <MudButton Href="/Account/Logout" Variant="Variant.Text">Sign in as someone else</MudButton>
+</MudStack>

@@ -1,0 +1,45 @@
+@using Admin.Auth
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@*
+    Hidden POST form to /account/logout. Put it once in a layout and call SubmitAsync()
+    from a menu item, or from the idle-timeout monitor with reason "idle".
+    Signing out needs a real HTTP request, because only an HTTP response can clear the cookie.
+*@
+<form id="@_formId" method="post" action="@AuthConstants.LogoutEndpoint" hidden>
+    <AntiforgeryToken />
+    <input type="hidden" name="reason" value="@_reason" />
+</form>
+
+@code {
+    private readonly string _formId = "logout-" + Guid.NewGuid().ToString("N");
+    private string _reason = "";
+    private bool _submitPending;
+    private IJSObjectReference? _module;
+
+    /// <param name="reason">"idle" shows the inactivity message on the login page.</param>
+    public Task SubmitAsync(string reason = "") => InvokeAsync(() =>
+    {
+        _reason = reason;
+        _submitPending = true;   // submit after render, so the form carries the new reason
+        StateHasChanged();
+    });
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_submitPending)
+            return;
+        _submitPending = false;
+        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/auth.js");
+        await _module.InvokeVoidAsync("submitForm", _formId);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { if (_module is not null) await _module.DisposeAsync(); }
+        catch (JSDisconnectedException) { }
+    }
+}

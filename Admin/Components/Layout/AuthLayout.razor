@@ -1,0 +1,16 @@
+@inherits LayoutComponentBase
+@using MudBlazor
+
+@* Centered card without the app's navigation, for the account pages. *@
+<MudThemeProvider />
+<MudPopoverProvider />
+
+<MudLayout>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="d-flex align-center justify-center" Style="min-height:100vh">
+            <MudPaper Elevation="3" Class="pa-8" Style="width:100%; max-width:420px">
+                @Body
+            </MudPaper>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
