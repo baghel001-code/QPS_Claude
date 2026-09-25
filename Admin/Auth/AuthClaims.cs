@@ -14,6 +14,7 @@ public static class AuthClaims
             new(ClaimTypes.Email, user.Email),
             new(AuthClaimTypes.DisplayName, user.DisplayName),
             new(AuthClaimTypes.SecurityStamp, user.SecurityStamp),
+            new(AuthClaimTypes.AccountType, user.AccountType.ToString()),
             new(AuthClaimTypes.AuthTime, signedInAt.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture)),
         };
         claims.AddRange(user.Roles.Select(r => new Claim(ClaimTypes.Role, r)));

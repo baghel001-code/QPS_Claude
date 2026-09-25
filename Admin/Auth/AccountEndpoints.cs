@@ -58,6 +58,7 @@ public static class AccountEndpoints
         var reason = form["reason"] == "idle" ? "idle" : "signedout";
 
         var userId = http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var tab = http.User.FindFirst(AuthClaimTypes.AccountType)?.Value == nameof(AccountType.Vendor) ? "&type=vendor" : "";
         await http.SignOutAsync(AuthConstants.Scheme);
         if (http.Features.Get<ISessionFeature>() is not null)
             http.Session.Clear();
@@ -65,7 +66,7 @@ public static class AccountEndpoints
         loggerFactory.CreateLogger("Auth").LogInformation("User {UserId} signed out ({Reason})", userId, reason);
         http.Response.Headers.CacheControl = "no-store";
         http.Response.Headers["Clear-Site-Data"] = "\"cache\"";  // drop cached authenticated pages
-        return Results.LocalRedirect($"{AuthConstants.LoginPath}?reason={reason}");
+        return Results.LocalRedirect($"{AuthConstants.LoginPath}?reason={reason}{tab}");
     }
 
     private static async Task<bool> IsAntiforgeryValidAsync(HttpContext http, IAntiforgery antiforgery)

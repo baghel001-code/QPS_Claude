@@ -23,13 +23,15 @@ public sealed class AccountService(
     private static readonly string DummyHash =
         new PasswordHasher<AuthUser>().HashPassword(null!, Guid.NewGuid().ToString());
 
-    public async Task<LoginResult> ValidateCredentialsAsync(string login, string password, CancellationToken ct = default)
+    public async Task<LoginResult> ValidateCredentialsAsync(
+        string login, string password, AccountType type, CancellationToken ct = default)
     {
         var settings = options.Value;
         login = login.Trim();
 
-        var user = await store.FindByLoginAsync(login, ct);
-        if (user is null)
+        var user = await store.FindByLoginAsync(login, type, ct);
+        // The type check repeats the store's filter so a store bug can't let a vendor in through the employee tab.
+        if (user is null || user.AccountType != type)
         {
             hasher.VerifyHashedPassword(null!, DummyHash, password);
             logger.LogInformation("Sign-in failed: unknown login");

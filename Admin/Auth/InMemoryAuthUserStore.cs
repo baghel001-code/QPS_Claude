@@ -5,7 +5,7 @@ namespace Admin.Auth;
 
 /// <summary>
 /// DEVELOPMENT ONLY. Loses everything on restart and does not work across servers.
-/// Seeds one user: admin / ChangeMe!2026
+/// Seeds an employee (admin / ChangeMe!2026) and a vendor (vendor1 / ChangeMe!2026).
 /// </summary>
 public sealed class InMemoryAuthUserStore : IAuthUserStore
 {
@@ -16,15 +16,21 @@ public sealed class InMemoryAuthUserStore : IAuthUserStore
     public InMemoryAuthUserStore(IPasswordHasher<AuthUser> hasher, TimeProvider clock)
     {
         _clock = clock;
-        var admin = new AuthUser("1", "admin", "admin@example.com", "Administrator", "", NewStamp(),
-            IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Admin"]);
-        _users[admin.Id] = admin with { PasswordHash = hasher.HashPassword(admin, "ChangeMe!2026") };
+        AuthUser[] seed =
+        [
+            new("E:1", "admin", "admin@example.com", "Administrator", "", NewStamp(),
+                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Admin"], AccountType.Employee),
+            new("V:1", "vendor1", "vendor1@example.com", "Sample Vendor Pvt Ltd", "", NewStamp(),
+                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Vendor"], AccountType.Vendor),
+        ];
+        foreach (var user in seed)
+            _users[user.Id] = user with { PasswordHash = hasher.HashPassword(user, "ChangeMe!2026") };
     }
 
-    public Task<AuthUser?> FindByLoginAsync(string login, CancellationToken ct = default) =>
-        Task.FromResult(_users.Values.FirstOrDefault(u =>
-            string.Equals(u.UserName, login, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(u.Email, login, StringComparison.OrdinalIgnoreCase)));
+    public Task<AuthUser?> FindByLoginAsync(string login, AccountType type, CancellationToken ct = default) =>
+        Task.FromResult(_users.Values.FirstOrDefault(u => u.AccountType == type &&
+            (string.Equals(u.UserName, login, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(u.Email, login, StringComparison.OrdinalIgnoreCase))));
 
     public Task<AuthUser?> FindByIdAsync(string userId, CancellationToken ct = default) =>
         Task.FromResult(_users.GetValueOrDefault(userId));

@@ -151,6 +151,13 @@ Sign-out menu in `MainLayout.razor` (the layout must be interactive):
 
 ## Database (implement `IAuthUserStore`)
 
+**Employee and vendor accounts.** The login page has an Employee tab and a Vendor tab, and
+`FindByLoginAsync(login, type)` receives the tab's `AccountType`, so the two can live in different
+tables. `AuthUser.Id` must be unique across both (for example `E:1042` and `V:88`), because
+sessions later look users up by id only. Only vendors can use Forgot password: the service
+refuses employee accounts, and employees see an IT-helpdesk note instead of the link.
+The user's type is in the `account_type` claim.
+
 ```sql
 ALTER TABLE dbo.Users ADD
     PasswordHash     NVARCHAR(512) NOT NULL DEFAULT '',

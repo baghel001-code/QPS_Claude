@@ -21,9 +21,28 @@
 
 <PageTitle>Sign in</PageTitle>
 
-<div class="qps-eyebrow">Welcome back</div>
+<div class="qps-tabs" role="tablist" aria-label="Account type">
+    <button type="button" role="tab" id="tab-employee" class="qps-tab @(IsVendor ? "" : "active")"
+            aria-selected="@(IsVendor ? "false" : "true")" aria-controls="login-panel"
+            disabled="@_busy" @onclick="() => SelectType(AccountType.Employee)">
+        <MudIcon Icon="@Icons.Material.Filled.Badge" Size="Size.Small" />
+        Employee
+    </button>
+    <button type="button" role="tab" id="tab-vendor" class="qps-tab @(IsVendor ? "active" : "")"
+            aria-selected="@(IsVendor ? "true" : "false")" aria-controls="login-panel"
+            disabled="@_busy" @onclick="() => SelectType(AccountType.Vendor)">
+        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
+        Vendor
+    </button>
+</div>
+
+<div id="login-panel" role="tabpanel" aria-labelledby="@(IsVendor ? "tab-vendor" : "tab-employee")">
+
+<div class="qps-eyebrow">@(IsVendor ? "Vendor sign-in" : "Employee sign-in")</div>
 <h2 class="qps-title">Sign in to QPS</h2>
-<p class="qps-sub">Use your Vishal Mega Mart account.</p>
+<p class="qps-sub">
+    @(IsVendor ? "Use your registered vendor code or e-mail." : "Use your employee ID or e-mail.")
+</p>
 
 @if (_notice is not null)
 {
@@ -38,7 +57,7 @@
     <DataAnnotationsValidator />
 
     <MudTextField @bind-Value="_model.Login" For="@(() => _model.Login)"
-                  Label="Username or e-mail" Variant="Variant.Outlined" Class="mb-4"
+                  Label="@(IsVendor ? "Vendor code or e-mail" : "Employee ID or e-mail")" Variant="Variant.Outlined" Class="mb-4"
                   AutoFocus="true" Disabled="_busy" autocomplete="username" />
 
     <MudTextField @bind-Value="_model.Password" For="@(() => _model.Password)"
@@ -52,7 +71,10 @@
 
     <div class="d-flex align-center justify-space-between my-4">
         <MudCheckBox T="bool" @bind-Value="_model.RememberMe" Label="Keep me signed in" Disabled="_busy" />
-        <MudLink Href="/Account/Forgot-Password" Typo="Typo.body2">Forgot password?</MudLink>
+        @if (IsVendor)
+        {
+            <MudLink Href="/Account/Forgot-Password" Typo="Typo.body2">Forgot password?</MudLink>
+        }
     </div>
 
     <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
@@ -68,6 +90,17 @@
         }
     </MudButton>
 </EditForm>
+
+@if (!IsVendor)
+{
+    @* Employee passwords are managed centrally, so there is no self-service reset here. *@
+    <p class="qps-note">
+        <MudIcon Icon="@Icons.Material.Outlined.SupportAgent" Size="Size.Small" />
+        <span>Forgot your password? Employee passwords are managed by IT. Contact the IT helpdesk to reset it.</span>
+    </p>
+}
+
+</div>
 
 @*
     Credentials were verified over the circuit. This form turns that into a real HTTP POST,
@@ -89,8 +122,11 @@
     [SupplyParameterFromQuery(Name = "ReturnUrl")] private string? ReturnUrl { get; set; }
     [SupplyParameterFromQuery(Name = "reason")] private string? Reason { get; set; }
     [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+    [SupplyParameterFromQuery(Name = "type")] private string? Type { get; set; }   // "vendor" opens the Vendor tab
 
     private readonly LoginModel _model = new();
+    private AccountType _type = AccountType.Employee;
+    private bool IsVendor => _type == AccountType.Vendor;
     private string _returnUrl = "/";
     private string? _notice;
     private string? _error;
@@ -103,6 +139,7 @@
     protected override async Task OnInitializedAsync()
     {
         _returnUrl = UrlSafety.LocalOrRoot(ReturnUrl);
+        _type = string.Equals(Type, "vendor", StringComparison.OrdinalIgnoreCase) ? AccountType.Vendor : AccountType.Employee;
 
         if (AuthState is not null && (await AuthState).User.Identity?.IsAuthenticated == true)
         {
@@ -130,7 +167,7 @@
 
         try
         {
-            var result = await Accounts.ValidateCredentialsAsync(_model.Login, _model.Password);
+            var result = await Accounts.ValidateCredentialsAsync(_model.Login, _model.Password, _type);
             _model.Password = "";   // don't keep the password in circuit memory
 
             switch (result.Status)
@@ -157,6 +194,15 @@
             _error = "Something went wrong. Please try again.";
         }
         _busy = false;
+    }
+
+    private void SelectType(AccountType type)
+    {
+        if (_busy || _type == type)
+            return;
+        _type = type;
+        _error = null;
+        _model.Password = "";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

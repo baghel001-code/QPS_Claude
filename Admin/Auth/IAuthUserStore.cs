@@ -6,9 +6,13 @@ namespace Admin.Auth;
 /// </summary>
 public interface IAuthUserStore
 {
-    /// <summary>Case-insensitive match on user name OR e-mail.</summary>
-    Task<AuthUser?> FindByLoginAsync(string userNameOrEmail, CancellationToken ct = default);
+    /// <summary>
+    /// Case-insensitive match on user name OR e-mail, among accounts of <paramref name="type"/> only.
+    /// Employees and vendors can live in different tables; look in the one for this type.
+    /// </summary>
+    Task<AuthUser?> FindByLoginAsync(string userNameOrEmail, AccountType type, CancellationToken ct = default);
 
+    /// <summary>By <see cref="AuthUser.Id"/>, which is unique across both account types.</summary>
     Task<AuthUser?> FindByIdAsync(string userId, CancellationToken ct = default);
 
     /// <summary>Increments the failed-login counter and returns the new value.</summary>

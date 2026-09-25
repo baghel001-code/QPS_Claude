@@ -20,16 +20,17 @@ public sealed class PasswordResetService(
     ILogger<PasswordResetService> logger)
 {
     /// <summary>
-    /// Always completes the same way whether or not the account exists, so the page can
-    /// show one message for both and nobody can use it to discover valid accounts.
+    /// Vendors only: employee passwords are managed by IT. Always completes the same way
+    /// whether or not the account exists, so the page can show one message for both and
+    /// nobody can use it to discover valid accounts.
     /// </summary>
     public async Task RequestResetAsync(string login, CancellationToken ct = default)
     {
         var settings = options.Value;
-        var user = await store.FindByLoginAsync(login.Trim(), ct);
-        if (user is not { IsActive: true })
+        var user = await store.FindByLoginAsync(login.Trim(), AccountType.Vendor, ct);
+        if (user is not { IsActive: true, AccountType: AccountType.Vendor })
         {
-            logger.LogInformation("Password reset requested for an unknown or disabled login");
+            logger.LogInformation("Password reset requested for an unknown, disabled or non-vendor login");
             return;
         }
 
@@ -56,7 +57,7 @@ public sealed class PasswordResetService(
         var tokenHash = Hash(token!);
         var userId = await store.FindUserIdByPasswordResetTokenAsync(tokenHash, ct);
         var user = userId is null ? null : await store.FindByIdAsync(userId, ct);
-        if (user is not { IsActive: true })
+        if (user is not { IsActive: true, AccountType: AccountType.Vendor })
             return ResetPasswordResult.BadToken;
 
         // Validate before consuming, so a weak password doesn't burn the link.
