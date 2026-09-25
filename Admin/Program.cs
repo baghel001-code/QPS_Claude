@@ -123,8 +123,17 @@ builder.Services.AddCascadingAuthenticationState();
 //builder.Services.AddAuthorizationCore();
 builder.Services.AddAuthorizationCore(options =>
 {
+    // Every endpoint without its own [Authorize]/[AllowAnonymous] needs a signed-in user,
+    // EXCEPT the Blazor framework endpoints. /_framework/blazor.web.js is served by an endpoint
+    // (not UseStaticFiles), so without this exemption the login page gets a 302 to
+    // /Account/Login instead of the script ("MIME type 'text/html' is not executable").
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
+        .RequireAssertion(ctx =>
+            ctx.User.Identity?.IsAuthenticated == true ||
+            (ctx.Resource is HttpContext http &&
+             (http.Request.Path.StartsWithSegments("/_framework") ||
+              http.Request.Path.StartsWithSegments("/_blazor") ||
+              http.Request.Path.StartsWithSegments("/service-worker.js"))))
         .Build();
 });
 builder.Services.AddScoped<Application.Services.MenuService>();
@@ -251,7 +260,10 @@ app.Use(async (context, next) =>
         "style-src 'self' 'unsafe-inline'; " +
         "img-src 'self' data:; " +
         "font-src 'self'; " +
-        "connect-src 'self' wss:; " +
+        // Development adds localhost for Visual Studio Browser Link / hot reload.
+        (app.Environment.IsDevelopment()
+            ? "connect-src 'self' wss: http://localhost:* ws://localhost:* wss://localhost:*; "
+            : "connect-src 'self' wss:; ") +
         "frame-src 'self'; " +
         "media-src 'self';";
     headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
