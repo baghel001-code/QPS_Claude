@@ -1,0 +1,447 @@
+<title>QPS Sign-in Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f4f6f9; --surface:#ffffff; --ink:#18202e; --muted:#586274; --line:#d6dbe4; --soft:#eef1f6;
+  --circuit:#3a52c2; --circuit-bg:#e8ecfb; --http:#0b7a5c; --http-bg:#e2f3ec;
+  --browser:#8a5a00; --browser-bg:#f8eed9; --yours:#a03a5a; --yours-bg:#f9e6ec;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f131a; --surface:#171d27; --ink:#e4e8ef; --muted:#9aa4b5; --line:#2b3442; --soft:#1d2430;
+    --circuit:#93a3ff; --circuit-bg:#232b4d; --http:#4fd1a5; --http-bg:#15352c;
+    --browser:#e9b44c; --browser-bg:#3a2f17; --yours:#f08fae; --yours-bg:#3d1f2a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f131a; --surface:#171d27; --ink:#e4e8ef; --muted:#9aa4b5; --line:#2b3442; --soft:#1d2430;
+  --circuit:#93a3ff; --circuit-bg:#232b4d; --http:#4fd1a5; --http-bg:#15352c;
+  --browser:#e9b44c; --browser-bg:#3a2f17; --yours:#f08fae; --yours-bg:#3d1f2a;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);padding-inline:16px;padding-block:0 64px}
+.wrap{max-width:1000px;margin:0 auto}
+header{padding-block:40px 20px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(28px,4.4vw,40px);line-height:1.15;margin:10px 0 12px;font-weight:700;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:22px;line-height:1.25;margin:0 0 6px;font-weight:600;text-wrap:balance}
+h3{font-size:15px;margin:28px 0 8px;font-weight:600}
+p{margin:0 0 12px;max-width:68ch}
+.lede{font-size:17px;color:var(--muted);max-width:70ch}
+code{font:13px/1.4 var(--mono);background:var(--soft);padding:1px 5px;border-radius:4px;word-break:break-word}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;padding-block:16px}
+nav.toc a{font-size:13px;color:var(--ink);text-decoration:none;border:1px solid var(--line);background:var(--surface);padding:5px 11px;border-radius:999px}
+nav.toc a:hover{border-color:var(--circuit)}
+a:focus-visible{outline:2px solid var(--circuit);outline-offset:2px}
+section{padding-block:36px 8px;border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+.rule{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:18px 0 6px}
+.rule div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+.rule div.c{border-top:3px solid var(--circuit)} .rule div.h{border-top:3px solid var(--http)}
+.rule b{display:block;margin-bottom:4px}
+.rule p{margin:0;font-size:14px;color:var(--muted)}
+figure{margin:18px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 14px 10px}
+.scroll{overflow-x:auto}
+figure svg{display:block;width:100%;min-width:720px;height:auto;color:var(--ink)}
+figcaption{font-size:13px;color:var(--muted);padding-top:10px;border-top:1px solid var(--line);margin-top:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted);margin:10px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{display:inline-block;width:26px;height:0;border-top:2px solid var(--ink)}
+.legend i.c{border-color:var(--circuit)} .legend i.h{border-color:var(--http)} .legend i.r{border-top-style:dashed;border-color:var(--muted)}
+ol.steps{margin:12px 0 0;padding-left:22px;max-width:74ch}
+ol.steps li{margin-bottom:6px}
+ol.steps li::marker{font:600 13px var(--mono);color:var(--muted)}
+/* svg */
+svg .ln{stroke:var(--line);stroke-width:1.5;stroke-dasharray:4 4}
+svg .bx{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+svg .bxc{fill:var(--circuit-bg);stroke:var(--circuit);stroke-width:1.5}
+svg .bxh{fill:var(--http-bg);stroke:var(--http);stroke-width:1.5}
+svg .note{fill:var(--soft);stroke:var(--line)}
+svg text{fill:var(--ink);font-family:var(--sans)}
+svg .t1{font-size:12.5px;font-weight:600}
+svg .t2{font:11px var(--mono);fill:var(--muted)}
+svg .t2s{font-size:12px;fill:var(--muted)}
+svg .t3{font-size:12px}
+svg .lbl{font-size:12px;paint-order:stroke;stroke:var(--surface);stroke-width:5px;stroke-linejoin:round}
+svg .num{fill:var(--soft);stroke:var(--line)}
+svg .numt{font:600 11px var(--mono);fill:var(--muted)}
+svg .m{stroke:var(--ink);stroke-width:1.5;fill:none}
+svg .m.c{stroke:var(--circuit);stroke-width:2}
+svg .m.h{stroke:var(--http);stroke-width:2}
+svg .m.r{stroke:var(--muted);stroke-dasharray:5 4}
+svg .m.e{stroke:var(--browser);stroke-dasharray:2 4;stroke-width:2}
+svg .ah-p{fill:var(--ink)} svg .ah-c{fill:var(--circuit)} svg .ah-h{fill:var(--http)} svg .ah-e{fill:var(--browser)}
+/* tables */
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:720px}
+th,td{line-height:1.5;text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+th{font:500 11px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--soft)}
+td:first-child{width:32%} td code{background:none;padding:0;font-size:12.5px}
+td.chg{white-space:nowrap;color:var(--muted)}
+.chip{display:inline-block;font:500 11.5px/1.2 var(--mono);padding:3px 8px;border-radius:999px;white-space:nowrap;background:var(--soft);color:var(--muted)}
+.chip.c{background:var(--circuit-bg);color:var(--circuit)}
+.chip.h{background:var(--http-bg);color:var(--http)}
+.chip.b{background:var(--browser-bg);color:var(--browser)}
+.chip.y{background:var(--yours-bg);color:var(--yours)}
+.threats td:first-child{width:30%}
+.check{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px;max-width:80ch}
+.check li{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px 12px 44px;position:relative}
+.check li::before{content:"";position:absolute;left:16px;top:16px;width:14px;height:14px;border:2px solid var(--muted);border-radius:3px}
+pre{font:12.5px/1.55 var(--mono);background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:12px 14px;overflow-x:auto;margin:8px 0 0}
+.note-box{border-left:3px solid var(--browser);background:var(--browser-bg);padding:10px 14px;border-radius:0 6px 6px 0;margin:14px 0;max-width:80ch;font-size:14px}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">QPS Admin · Blazor Server · cookie authentication</div>
+  <h1>QPS Sign-in Flow</h1>
+  <p class="lede">How login, logout, forgot password and reset password work in the new auth module, which file does each job, and what you connect to your own database and mail server.</p>
+  <nav class="toc" aria-label="Sections">
+    <a href="#rule">The core rule</a><a href="#httpcontext">HttpContext</a><a href="#login">Login</a><a href="#logout">Logout</a><a href="#reset">Forgot / reset</a><a href="#session">Session checks</a><a href="#files">Which file does what</a><a href="#security">Security</a><a href="#setup">Setup checklist</a>
+  </nav>
+</header>
+
+<section id="rule">
+  <h2>The core rule</h2>
+  <p>An interactive page talks to the server over a WebSocket. A WebSocket message has no HTTP response, and only an HTTP response can set or clear a cookie. So every flow is split in two:</p>
+  <div class="rule">
+    <div class="c"><b>Interactive page (circuit)</b><p>Shows the form, validates input, checks the password, handles lockout, shows messages. No page reloads.</p></div>
+    <div class="h"><b>HTTP endpoint</b><p>Receives a normal form POST and writes or clears the auth cookie in its response. Then redirects.</p></div>
+  </div>
+  <div class="legend" aria-label="Diagram legend">
+    <span><i class="c"></i>over the WebSocket (circuit)</span>
+    <span><i class="h"></i>real HTTP request</span>
+    <span><i></i>C# method call on the server</span>
+    <span><i class="r"></i>return value</span>
+  </div>
+</section>
+
+<section id="httpcontext">
+  <h2>Where HttpContext exists</h2>
+  <p><code>HttpContext</code> only exists while an HTTP request is being handled. An interactive page lives in three moments, and only two of them are HTTP requests.</p>
+  <figure><div class="scroll"><svg viewBox="0 0 880 236" role="img" aria-label="HttpContext exists during the prerender request and the endpoint request, but is null while the page runs interactively over the WebSocket.">
+<defs><marker id="hc-p" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-p"/></marker><marker id="hc-c" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-c"/></marker><marker id="hc-h" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-h"/></marker><marker id="hc-e" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-e"/></marker></defs>
+<rect x="20" y="14" width="250" height="60" rx="6" class="bxh"/><text x="145.0" y="36" text-anchor="middle" class="t1">1 · GET /Account/Login</text><text x="145.0" y="53" text-anchor="middle" class="t2">HTTP request</text>
+<line x1="274" y1="44" x2="318" y2="44" class="m h" marker-end="url(#hc-h)"/>
+<rect x="322" y="14" width="538" height="60" rx="6" class="bx"/>
+<text x="340" y="38" class="t1">Prerender: the page runs inside this request</text><text x="340" y="57" class="t2s">HttpContext exists, but HTML is already streaming — too late for cookies</text>
+<rect x="20" y="90" width="250" height="60" rx="6" class="bxc"/><text x="145.0" y="112" text-anchor="middle" class="t1">2 · WebSocket /_blazor</text><text x="145.0" y="129" text-anchor="middle" class="t2">blazor.web.js connects</text>
+<line x1="274" y1="120" x2="318" y2="120" class="m c" marker-end="url(#hc-c)"/>
+<rect x="322" y="90" width="538" height="60" rx="6" class="bx"/>
+<text x="340" y="114" class="t1">Interactive: the page is created again in the circuit</text><text x="340" y="133" class="t2s">HttpContext is null · every click is a WebSocket message</text>
+<rect x="20" y="166" width="250" height="60" rx="6" class="bxh"/><text x="145.0" y="188" text-anchor="middle" class="t1">3 · POST /account/complete-login</text><text x="145.0" y="205" text-anchor="middle" class="t2">HTTP request</text>
+<line x1="274" y1="196" x2="318" y2="196" class="m h" marker-end="url(#hc-h)"/>
+<rect x="322" y="166" width="538" height="60" rx="6" class="bx"/>
+<text x="340" y="190" class="t1">Endpoint: a fresh request, response not started</text><text x="340" y="209" class="t2s">HttpContext is real → SignInAsync writes Set-Cookie</text>
+</svg></div>
+  <figcaption>The login page never uses HttpContext. It reads the user from <code>AuthenticationStateProvider</code>, and step 3 does the cookie work.</figcaption></figure>
+</section>
+
+<section id="login">
+  <h2>Login</h2>
+  <p>The password is checked over the circuit. The cookie is set by a separate HTTP POST that carries a one-time ticket, never the password.</p>
+  <figure><div class="scroll"><svg viewBox="0 0 900 580" role="img" aria-label="Login sequence: credentials checked over the circuit, then a one-time ticket is posted over HTTP to the endpoint that sets the cookie.">
+<defs><marker id="lg-p" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-p"/></marker><marker id="lg-c" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-c"/></marker><marker id="lg-h" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-h"/></marker><marker id="lg-e" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-e"/></marker></defs>
+<line x1="70" y1="58" x2="70" y2="570" class="ln"/>
+<rect x="1" y="14" width="138" height="44" rx="6" class="bx"/>
+<text x="70" y="33" text-anchor="middle" class="t1">Browser</text>
+<text x="70" y="49" text-anchor="middle" class="t2">user + auth.js</text>
+<line x1="222" y1="58" x2="222" y2="570" class="ln"/>
+<rect x="153" y="14" width="138" height="44" rx="6" class="bx"/>
+<text x="222" y="33" text-anchor="middle" class="t1">Login.razor</text>
+<text x="222" y="49" text-anchor="middle" class="t2">circuit</text>
+<line x1="374" y1="58" x2="374" y2="570" class="ln"/>
+<rect x="305" y="14" width="138" height="44" rx="6" class="bx"/>
+<text x="374" y="33" text-anchor="middle" class="t1">AccountService</text>
+<text x="374" y="49" text-anchor="middle" class="t2">circuit</text>
+<line x1="526" y1="58" x2="526" y2="570" class="ln"/>
+<rect x="457" y="14" width="138" height="44" rx="6" class="bx"/>
+<text x="526" y="33" text-anchor="middle" class="t1">LoginTicketStore</text>
+<text x="526" y="49" text-anchor="middle" class="t2">singleton</text>
+<line x1="678" y1="58" x2="678" y2="570" class="ln"/>
+<rect x="609" y="14" width="138" height="44" rx="6" class="bx"/>
+<text x="678" y="33" text-anchor="middle" class="t1">AccountEndpoints</text>
+<text x="678" y="49" text-anchor="middle" class="t2">HTTP</text>
+<line x1="830" y1="58" x2="830" y2="570" class="ln"/>
+<rect x="761" y="14" width="138" height="44" rx="6" class="bx"/>
+<text x="830" y="33" text-anchor="middle" class="t1">IAuthUserStore</text>
+<text x="830" y="49" text-anchor="middle" class="t2">your DB</text>
+<circle cx="20" cy="92" r="10" class="num"/><text x="20" y="96" text-anchor="middle" class="numt">1</text>
+<line x1="74" y1="96" x2="219" y2="96" class="m c" marker-end="url(#lg-c)"/>
+<text x="146" y="89" text-anchor="middle" class="lbl">click Sign in</text>
+<circle cx="20" cy="132" r="10" class="num"/><text x="20" y="136" text-anchor="middle" class="numt">2</text>
+<line x1="226" y1="136" x2="371" y2="136" class="m" marker-end="url(#lg-p)"/>
+<text x="298" y="129" text-anchor="middle" class="lbl">ValidateCredentialsAsync</text>
+<circle cx="20" cy="172" r="10" class="num"/><text x="20" y="176" text-anchor="middle" class="numt">3</text>
+<line x1="378" y1="176" x2="827" y2="176" class="m" marker-end="url(#lg-p)"/>
+<text x="602" y="169" text-anchor="middle" class="lbl">FindByLoginAsync + lockout counters</text>
+<circle cx="20" cy="212" r="10" class="num"/><text x="20" y="216" text-anchor="middle" class="numt">4</text>
+<line x1="826" y1="216" x2="377" y2="216" class="m r" marker-end="url(#lg-p)"/>
+<text x="602" y="209" text-anchor="middle" class="lbl">AuthUser</text>
+<circle cx="20" cy="252" r="10" class="num"/><text x="20" y="256" text-anchor="middle" class="numt">5</text>
+<line x1="370" y1="256" x2="225" y2="256" class="m r" marker-end="url(#lg-p)"/>
+<text x="298" y="249" text-anchor="middle" class="lbl">Success (password cleared)</text>
+<circle cx="20" cy="292" r="10" class="num"/><text x="20" y="296" text-anchor="middle" class="numt">6</text>
+<line x1="226" y1="296" x2="523" y2="296" class="m" marker-end="url(#lg-p)"/>
+<text x="374" y="289" text-anchor="middle" class="lbl">Issue(userId) → ticket</text>
+<circle cx="20" cy="332" r="10" class="num"/><text x="20" y="336" text-anchor="middle" class="numt">7</text>
+<line x1="218" y1="336" x2="73" y2="336" class="m c" marker-end="url(#lg-c)"/>
+<text x="146" y="329" text-anchor="middle" class="lbl">render hidden form, submitForm()</text>
+<circle cx="20" cy="372" r="10" class="num"/><text x="20" y="376" text-anchor="middle" class="numt">8</text>
+<line x1="74" y1="376" x2="675" y2="376" class="m h" marker-end="url(#lg-h)"/>
+<text x="374" y="369" text-anchor="middle" class="lbl">POST /account/complete-login</text>
+<circle cx="20" cy="412" r="10" class="num"/><text x="20" y="416" text-anchor="middle" class="numt">9</text>
+<line x1="674" y1="416" x2="529" y2="416" class="m" marker-end="url(#lg-p)"/>
+<text x="602" y="409" text-anchor="middle" class="lbl">Redeem(ticket) · once</text>
+<circle cx="20" cy="452" r="10" class="num"/><text x="20" y="456" text-anchor="middle" class="numt">10</text>
+<line x1="682" y1="456" x2="827" y2="456" class="m" marker-end="url(#lg-p)"/>
+<text x="754" y="449" text-anchor="middle" class="lbl">FindByIdAsync</text>
+<circle cx="20" cy="492" r="10" class="num"/><text x="20" y="496" text-anchor="middle" class="numt">11</text>
+<line x1="674" y1="496" x2="73" y2="496" class="m h" marker-end="url(#lg-h)"/>
+<text x="374" y="489" text-anchor="middle" class="lbl">Set-Cookie + 302 to ReturnUrl</text>
+<circle cx="20" cy="532" r="10" class="num"/><text x="20" y="536" text-anchor="middle" class="numt">12</text>
+<rect x="40" y="519" width="254" height="24" rx="4" class="note"/>
+<text x="167" y="535" text-anchor="middle" class="t3">full reload → new signed-in circuit</text>
+</svg></div>
+  <figcaption>Steps 1–7 run over the WebSocket. Steps 8–11 are one HTTP request and its redirect. Step 12 is the fresh page load.</figcaption></figure>
+  <ol class="steps">
+    <li>The user fills in the MudBlazor form and clicks <b>Sign in</b>.</li>
+    <li><code>Login.razor</code> calls <code>AccountService.ValidateCredentialsAsync</code>.</li>
+    <li>The service looks the user up. Unknown users are checked against a dummy hash so they take as long as a wrong password. A wrong password adds 1 to the failure count; at 5 the account locks for 15 minutes.</li>
+    <li>The store returns the user.</li>
+    <li>The service returns Success. If the stored hash is old, it is upgraded here. The page clears the password from memory.</li>
+    <li>The page asks <code>LoginTicketStore</code> for a ticket: 64 random hex characters, valid 60 seconds, usable once.</li>
+    <li>The page renders a hidden form (ticket, antiforgery token, ReturnUrl) and <code>auth.js</code> submits it.</li>
+    <li>The browser sends a normal POST to <code>/account/complete-login</code>. The endpoint first validates the antiforgery token.</li>
+    <li>It redeems the ticket. A second use of the same ticket fails.</li>
+    <li>It reloads the user (still active?) and builds the claims.</li>
+    <li><code>SignInAsync</code> writes the <code>__Host-App.Auth</code> cookie, and the response redirects to the ReturnUrl, but only if that is a page on this site.</li>
+    <li>The full page load starts a new circuit that is signed in.</li>
+  </ol>
+</section>
+
+<section id="logout">
+  <h2>Logout</h2>
+  <p>Sign-out is always a POST with an antiforgery token. Opening a URL never signs anyone out, so a link on another site can't log your users out.</p>
+  <figure><div class="scroll"><svg viewBox="0 0 820 340" role="img" aria-label="Logout sequence: the circuit renders a hidden form, the browser posts it, the endpoint clears the cookie and redirects to the login page.">
+<defs><marker id="lo-p" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-p"/></marker><marker id="lo-c" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-c"/></marker><marker id="lo-h" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-h"/></marker><marker id="lo-e" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-e"/></marker></defs>
+<line x1="70" y1="58" x2="70" y2="330" class="ln"/>
+<rect x="-5" y="14" width="150" height="44" rx="6" class="bx"/>
+<text x="70" y="33" text-anchor="middle" class="t1">Browser</text>
+<text x="70" y="49" text-anchor="middle" class="t2">user + auth.js</text>
+<line x1="297" y1="58" x2="297" y2="330" class="ln"/>
+<rect x="222" y="14" width="150" height="44" rx="6" class="bx"/>
+<text x="297" y="33" text-anchor="middle" class="t1">LogoutForm.razor</text>
+<text x="297" y="49" text-anchor="middle" class="t2">circuit</text>
+<line x1="523" y1="58" x2="523" y2="330" class="ln"/>
+<rect x="448" y="14" width="150" height="44" rx="6" class="bx"/>
+<text x="523" y="33" text-anchor="middle" class="t1">AccountEndpoints</text>
+<text x="523" y="49" text-anchor="middle" class="t2">HTTP</text>
+<line x1="750" y1="58" x2="750" y2="330" class="ln"/>
+<rect x="675" y="14" width="150" height="44" rx="6" class="bx"/>
+<text x="750" y="33" text-anchor="middle" class="t1">Login.razor</text>
+<text x="750" y="49" text-anchor="middle" class="t2">circuit</text>
+<circle cx="20" cy="92" r="10" class="num"/><text x="20" y="96" text-anchor="middle" class="numt">1</text>
+<line x1="74" y1="96" x2="294" y2="96" class="m c" marker-end="url(#lo-c)"/>
+<text x="183" y="89" text-anchor="middle" class="lbl">Sign out click / idle timer</text>
+<circle cx="20" cy="132" r="10" class="num"/><text x="20" y="136" text-anchor="middle" class="numt">2</text>
+<line x1="293" y1="136" x2="73" y2="136" class="m c" marker-end="url(#lo-c)"/>
+<text x="183" y="129" text-anchor="middle" class="lbl">set reason, submitForm()</text>
+<circle cx="20" cy="172" r="10" class="num"/><text x="20" y="176" text-anchor="middle" class="numt">3</text>
+<line x1="74" y1="176" x2="520" y2="176" class="m h" marker-end="url(#lo-h)"/>
+<text x="297" y="169" text-anchor="middle" class="lbl">POST /account/logout + antiforgery</text>
+<circle cx="20" cy="212" r="10" class="num"/><text x="20" y="216" text-anchor="middle" class="numt">4</text>
+<rect x="420" y="199" width="208" height="24" rx="4" class="note"/>
+<text x="523" y="215" text-anchor="middle" class="t3">SignOutAsync · Session.Clear</text>
+<circle cx="20" cy="252" r="10" class="num"/><text x="20" y="256" text-anchor="middle" class="numt">5</text>
+<line x1="519" y1="256" x2="73" y2="256" class="m h" marker-end="url(#lo-h)"/>
+<text x="297" y="249" text-anchor="middle" class="lbl">clear cookie + 302</text>
+<circle cx="20" cy="292" r="10" class="num"/><text x="20" y="296" text-anchor="middle" class="numt">6</text>
+<line x1="74" y1="296" x2="747" y2="296" class="m h" marker-end="url(#lo-h)"/>
+<text x="410" y="289" text-anchor="middle" class="lbl">GET /Account/Login?reason=idle</text>
+</svg></div>
+  <figcaption>The same path is used by the Sign out menu, the <code>/Account/Logout</code> page and the idle-timeout monitor (reason <code>idle</code>).</figcaption></figure>
+</section>
+
+<section id="reset">
+  <h2>Forgot and reset password</h2>
+  <p>The raw token only exists in the e-mail. The database stores its SHA-256 hash, so a leaked table can't be used to reset passwords.</p>
+  <figure><div class="scroll"><svg viewBox="0 0 880 500" role="img" aria-label="Forgot and reset password sequence: a hashed single-use token is stored and e-mailed; resetting consumes it and rotates the security stamp.">
+<defs><marker id="rs-p" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-p"/></marker><marker id="rs-c" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-c"/></marker><marker id="rs-h" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-h"/></marker><marker id="rs-e" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-e"/></marker></defs>
+<line x1="70" y1="58" x2="70" y2="490" class="ln"/>
+<rect x="-5" y="14" width="150" height="44" rx="6" class="bx"/>
+<text x="70" y="33" text-anchor="middle" class="t1">Browser</text>
+<text x="70" y="49" text-anchor="middle" class="t2">user</text>
+<line x1="255" y1="58" x2="255" y2="490" class="ln"/>
+<rect x="180" y="14" width="150" height="44" rx="6" class="bx"/>
+<text x="255" y="33" text-anchor="middle" class="t1">Forgot / Reset page</text>
+<text x="255" y="49" text-anchor="middle" class="t2">circuit</text>
+<line x1="440" y1="58" x2="440" y2="490" class="ln"/>
+<rect x="365" y="14" width="150" height="44" rx="6" class="bx"/>
+<text x="440" y="33" text-anchor="middle" class="t1">PasswordResetService</text>
+<text x="440" y="49" text-anchor="middle" class="t2">circuit</text>
+<line x1="625" y1="58" x2="625" y2="490" class="ln"/>
+<rect x="550" y="14" width="150" height="44" rx="6" class="bx"/>
+<text x="625" y="33" text-anchor="middle" class="t1">IAuthUserStore</text>
+<text x="625" y="49" text-anchor="middle" class="t2">your DB</text>
+<line x1="810" y1="58" x2="810" y2="490" class="ln"/>
+<rect x="735" y="14" width="150" height="44" rx="6" class="bx"/>
+<text x="810" y="33" text-anchor="middle" class="t1">IAuthEmailSender</text>
+<text x="810" y="49" text-anchor="middle" class="t2">your SMTP</text>
+<circle cx="20" cy="92" r="10" class="num"/><text x="20" y="96" text-anchor="middle" class="numt">1</text>
+<line x1="74" y1="96" x2="252" y2="96" class="m c" marker-end="url(#rs-c)"/>
+<text x="162" y="89" text-anchor="middle" class="lbl">submit username / e-mail</text>
+<circle cx="20" cy="132" r="10" class="num"/><text x="20" y="136" text-anchor="middle" class="numt">2</text>
+<line x1="259" y1="136" x2="437" y2="136" class="m" marker-end="url(#rs-p)"/>
+<text x="348" y="129" text-anchor="middle" class="lbl">RequestResetAsync</text>
+<circle cx="20" cy="172" r="10" class="num"/><text x="20" y="176" text-anchor="middle" class="numt">3</text>
+<line x1="444" y1="176" x2="622" y2="176" class="m" marker-end="url(#rs-p)"/>
+<text x="532" y="169" text-anchor="middle" class="lbl">save SHA-256(token), 30 min</text>
+<circle cx="20" cy="212" r="10" class="num"/><text x="20" y="216" text-anchor="middle" class="numt">4</text>
+<line x1="444" y1="216" x2="807" y2="216" class="m" marker-end="url(#rs-p)"/>
+<text x="625" y="209" text-anchor="middle" class="lbl">send link (PublicBaseUrl)</text>
+<circle cx="20" cy="252" r="10" class="num"/><text x="20" y="256" text-anchor="middle" class="numt">5</text>
+<line x1="251" y1="256" x2="73" y2="256" class="m c" marker-end="url(#rs-c)"/>
+<text x="162" y="249" text-anchor="middle" class="lbl">same message for everyone (≥1 s)</text>
+<circle cx="20" cy="292" r="10" class="num"/><text x="20" y="296" text-anchor="middle" class="numt">6</text>
+<line x1="806" y1="296" x2="73" y2="296" class="m e" marker-end="url(#rs-e)"/>
+<text x="440" y="289" text-anchor="middle" class="lbl">user opens e-mailed link</text>
+<circle cx="20" cy="332" r="10" class="num"/><text x="20" y="336" text-anchor="middle" class="numt">7</text>
+<line x1="74" y1="336" x2="252" y2="336" class="m c" marker-end="url(#rs-c)"/>
+<text x="162" y="329" text-anchor="middle" class="lbl">new password ×2</text>
+<circle cx="20" cy="372" r="10" class="num"/><text x="20" y="376" text-anchor="middle" class="numt">8</text>
+<line x1="259" y1="376" x2="437" y2="376" class="m" marker-end="url(#rs-p)"/>
+<text x="348" y="369" text-anchor="middle" class="lbl">ResetPasswordAsync</text>
+<circle cx="20" cy="412" r="10" class="num"/><text x="20" y="416" text-anchor="middle" class="numt">9</text>
+<line x1="444" y1="416" x2="622" y2="416" class="m" marker-end="url(#rs-p)"/>
+<text x="532" y="409" text-anchor="middle" class="lbl">policy → consume token → hash + new stamp</text>
+<circle cx="20" cy="452" r="10" class="num"/><text x="20" y="456" text-anchor="middle" class="numt">10</text>
+<line x1="251" y1="456" x2="73" y2="456" class="m c" marker-end="url(#rs-c)"/>
+<text x="162" y="449" text-anchor="middle" class="lbl">forceLoad /Account/Login?reason=reset</text>
+</svg></div>
+  <figcaption>Step 5 shows the same message whether or not the account exists. Step 9 checks the password rules before using up the token, so a weak password doesn't waste the link.</figcaption></figure>
+  <ol class="steps">
+    <li>The user enters a username or e-mail on <code>/Account/Forgot-Password</code>.</li>
+    <li>The page calls <code>RequestResetAsync</code>.</li>
+    <li>If the account exists and is active, a random token is made and its hash is saved with a 30-minute expiry. Any older token for that user is replaced.</li>
+    <li>The link is built from <code>Auth:PublicBaseUrl</code>, never from the request's Host header, and e-mailed.</li>
+    <li>The page shows "If an account matches…" to everyone and takes at least 1 second, so it can't be used to find accounts.</li>
+    <li>The user opens <code>/Account/Reset-Password?token=…</code> from the e-mail. The page checks the token on load.</li>
+    <li>The user enters the new password twice.</li>
+    <li>The page calls <code>ResetPasswordAsync</code>.</li>
+    <li>Password rules are checked, the token is consumed (only one submit can win), the new hash is saved and the security stamp changes. That signs the user out on every other device. Any lockout is cleared.</li>
+    <li>The page reloads to the login page with "Your password has been changed".</li>
+  </ol>
+</section>
+
+<section id="session">
+  <h2>Session checks while the user works</h2>
+  <p>Three limits apply to every session: <b>30 minutes idle</b> (the cookie slides), <b>12 hours absolute</b> after sign-in, and <b>user still valid</b> (active, password not changed). Two paths enforce them, because an open interactive page makes no HTTP requests.</p>
+  <figure><div class="scroll"><svg viewBox="0 0 880 300" role="img" aria-label="Two paths re-check an open session: the cookie validator on every HTTP request and the circuit revalidator on a timer; both call SessionValidation, which reads the user store.">
+<defs><marker id="sc-p" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-p"/></marker><marker id="sc-c" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-c"/></marker><marker id="sc-h" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-h"/></marker><marker id="sc-e" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="ah-e"/></marker></defs>
+<rect x="20" y="30" width="230" height="64" rx="6" class="bxh"/><text x="135.0" y="52" text-anchor="middle" class="t1">HTTP request</text><text x="135.0" y="69" text-anchor="middle" class="t2">page load · API · Blazor connect</text>
+<rect x="20" y="170" width="230" height="64" rx="6" class="bxc"/><text x="135.0" y="192" text-anchor="middle" class="t1">Open interactive page</text><text x="135.0" y="209" text-anchor="middle" class="t2">makes no HTTP requests</text>
+<rect x="310" y="30" width="270" height="64" rx="6" class="bx"/><text x="445.0" y="52" text-anchor="middle" class="t1">CookieValidator</text><text x="445.0" y="69" text-anchor="middle" class="t2">absolute lifetime: every request</text><text x="445.0" y="83" text-anchor="middle" class="t2">user check: at most every 5 min</text>
+<rect x="310" y="170" width="270" height="64" rx="6" class="bx"/><text x="445.0" y="192" text-anchor="middle" class="t1">AppRevalidatingAuthStateProvider</text><text x="445.0" y="209" text-anchor="middle" class="t2">timer: every 5 min</text>
+<rect x="640" y="100" width="236" height="64" rx="6" class="bx"/><text x="758.0" y="122" text-anchor="middle" class="t1">SessionValidation</text><text x="758.0" y="139" text-anchor="middle" class="t2">active? stamp unchanged? &lt; 12 h?</text>
+<rect x="640" y="220" width="236" height="56" rx="6" class="bx"/><text x="758.0" y="242" text-anchor="middle" class="t1">IAuthUserStore</text><text x="758.0" y="259" text-anchor="middle" class="t2">FindByIdAsync</text>
+<line x1="254" y1="62" x2="306" y2="62" class="m h" marker-end="url(#sc-h)"/>
+<line x1="254" y1="202" x2="306" y2="202" class="m c" marker-end="url(#sc-c)"/>
+<line x1="584" y1="62" x2="636" y2="122" class="m" marker-end="url(#sc-p)"/>
+<line x1="584" y1="202" x2="636" y2="144" class="m" marker-end="url(#sc-p)"/>
+<line x1="758" y1="168" x2="758" y2="216" class="m" marker-end="url(#sc-p)"/>
+<text x="445" y="118" text-anchor="middle" class="t2s">fail → reject + sign out (cookie cleared)</text>
+<text x="445" y="258" text-anchor="middle" class="t2s">fail → page turns anonymous at once</text>
+</svg></div>
+  <figcaption>If an administrator disables a user or the password is reset, open pages lose access within 5 minutes and the cookie is cleared on the next HTTP request.</figcaption></figure>
+</section>
+
+<section id="files">
+  <h2>Which file does what</h2>
+  <p>All paths are under <code>Admin/</code>. <span class="chip c">Circuit</span> runs over the WebSocket, <span class="chip h">HTTP</span> runs in a normal request, <span class="chip b">Browser</span> is JavaScript, <span class="chip y">Yours</span> is what you implement or edit.</p>
+  <h3>Pages the user sees</h3><div class="tbl"><table><thead><tr><th>File</th><th>Runs</th><th>What it does</th><th>You change it?</th></tr></thead><tbody>
+<tr><td><code>Components/Pages/Account/Login.razor</code></td><td><span class="chip c">Circuit</span></td><td>Sign-in form. Calls AccountService, gets a ticket from LoginTicketStore, renders the hidden form and asks auth.js to post it. Shows messages for idle, signed out, reset, expired.</td><td class="chg">No</td></tr>
+<tr><td><code>Components/Pages/Account/Logout.razor</code></td><td><span class="chip c">Circuit</span></td><td>&quot;Sign out?&quot; confirmation page. Opening it never signs out; the button submits LogoutForm.</td><td class="chg">No</td></tr>
+<tr><td><code>Components/Pages/Account/ForgotPassword.razor</code></td><td><span class="chip c">Circuit</span></td><td>Takes username or e-mail, calls RequestResetAsync, always shows the same message and waits at least 1 s.</td><td class="chg">No</td></tr>
+<tr><td><code>Components/Pages/Account/ResetPassword.razor</code></td><td><span class="chip c">Circuit</span></td><td>Opened from the e-mail. Checks the token on load, takes the new password twice, calls ResetPasswordAsync.</td><td class="chg">No</td></tr>
+<tr><td><code>Components/Pages/Account/AccessDenied.razor</code></td><td><span class="chip s">Static</span></td><td>Shown when a signed-in user lacks the role for a page (403).</td><td class="chg">No</td></tr>
+<tr><td><code>Components/Layout/AuthLayout.razor</code></td><td><span class="chip s">Layout</span></td><td>Centered card without the app menu, used by all account pages.</td><td class="chg">Optional: branding</td></tr>
+</tbody></table></div>
+<h3>Building blocks in your layout</h3><div class="tbl"><table><thead><tr><th>File</th><th>Runs</th><th>What it does</th><th>You change it?</th></tr></thead><tbody>
+<tr><td><code>Components/Account/LogoutForm.razor</code></td><td><span class="chip c">Circuit → HTTP</span></td><td>Hidden POST form with antiforgery token. SubmitAsync(reason) posts it to /account/logout.</td><td class="chg">No</td></tr>
+<tr><td><code>Components/Layout/IdleTimeoutMonitor.razor</code></td><td><span class="chip c">Circuit</span></td><td>Idle warning overlay. When time runs out it calls its LogoutForm with reason &quot;idle&quot;.</td><td class="chg">No</td></tr>
+<tr><td><code>wwwroot/js/auth.js</code></td><td><span class="chip b">Browser</span></td><td>submitForm(id): posts a form as a real browser request, so the response can set or clear the cookie.</td><td class="chg">No</td></tr>
+</tbody></table></div>
+<h3>Services (run inside the circuit)</h3><div class="tbl"><table><thead><tr><th>File</th><th>Runs</th><th>What it does</th><th>You change it?</th></tr></thead><tbody>
+<tr><td><code>Auth/AccountService.cs</code></td><td><span class="chip c">Circuit</span></td><td>Checks the password: dummy hash for unknown users, lockout after 5 failures, disabled check, automatic hash upgrade.</td><td class="chg">No</td></tr>
+<tr><td><code>Auth/LoginTicketStore.cs</code></td><td><span class="chip s">Singleton</span></td><td>Issues and redeems one-time tickets (64 hex chars, 60 s, single use). In memory.</td><td class="chg">Redis if multi-server</td></tr>
+<tr><td><code>Auth/PasswordResetService.cs</code></td><td><span class="chip c">Circuit</span></td><td>Creates the reset token, stores its hash, sends the link; resets the password and rotates the security stamp.</td><td class="chg">No</td></tr>
+<tr><td><code>Auth/PasswordPolicy.cs</code></td><td><span class="chip s">Shared</span></td><td>Password rules: minimum length, common-password block-list, no username inside.</td><td class="chg">Optional: rules</td></tr>
+<tr><td><code>Auth/AppRevalidatingAuthStateProvider.cs</code></td><td><span class="chip c">Circuit</span></td><td>Re-checks the user of every open page every 5 minutes.</td><td class="chg">No</td></tr>
+</tbody></table></div>
+<h3>HTTP side (the only code that touches the cookie)</h3><div class="tbl"><table><thead><tr><th>File</th><th>Runs</th><th>What it does</th><th>You change it?</th></tr></thead><tbody>
+<tr><td><code>Auth/AccountEndpoints.cs</code></td><td><span class="chip h">HTTP</span></td><td>POST /account/complete-login (ticket → SignInAsync) and POST /account/logout (SignOutAsync). Both validate antiforgery.</td><td class="chg">No</td></tr>
+<tr><td><code>Auth/CookieValidator.cs</code></td><td><span class="chip h">HTTP</span></td><td>Runs on every request with the cookie: absolute lifetime, then a throttled user check.</td><td class="chg">No</td></tr>
+</tbody></table></div>
+<h3>Shared pieces and setup</h3><div class="tbl"><table><thead><tr><th>File</th><th>Runs</th><th>What it does</th><th>You change it?</th></tr></thead><tbody>
+<tr><td><code>Auth/AuthServiceCollectionExtensions.cs</code></td><td><span class="chip s">Startup</span></td><td>AddAppAuthentication(): registers the services and the cookie (name, HttpOnly, Secure, Lax, idle timeout, events).</td><td class="chg">No</td></tr>
+<tr><td><code>Auth/AuthClaims.cs</code></td><td><span class="chip s">Shared</span></td><td>Builds the claims (id, name, e-mail, roles, security stamp, sign-in time). Also holds SessionValidation.</td><td class="chg">No</td></tr>
+<tr><td><code>Auth/UrlSafety.cs</code></td><td><span class="chip s">Shared</span></td><td>Allows only local ReturnUrl values, so nobody can redirect users to another site.</td><td class="chg">No</td></tr>
+<tr><td><code>Auth/AuthConstants.cs</code></td><td><span class="chip s">Shared</span></td><td>Cookie name, page paths, endpoint paths, claim type names.</td><td class="chg">No</td></tr>
+<tr><td><code>Auth/AuthSettings.cs</code></td><td><span class="chip s">Config</span></td><td>The &quot;Auth&quot; section of appsettings.json: timeouts, lockout, token lifetime, PublicBaseUrl.</td><td class="chg">Set values</td></tr>
+<tr><td><code>Auth/AuthUser.cs</code></td><td><span class="chip s">Shared</span></td><td>The user record the module works with. Map it from your user table.</td><td class="chg">No</td></tr>
+</tbody></table></div>
+<h3>Connect to your system</h3><div class="tbl"><table><thead><tr><th>File</th><th>Runs</th><th>What it does</th><th>You change it?</th></tr></thead><tbody>
+<tr><td><code>Auth/IAuthUserStore.cs</code></td><td><span class="chip y">Interface</span></td><td>Every database call the module makes (find user, lockout, password hash, reset tokens).</td><td class="chg">Implement</td></tr>
+<tr><td><code>Auth/InMemoryAuthUserStore.cs</code></td><td><span class="chip y">Dev only</span></td><td>Stand-in store with user admin / ChangeMe!2026. Lost on restart.</td><td class="chg">Replace</td></tr>
+<tr><td><code>Auth/IAuthEmailSender.cs</code></td><td><span class="chip y">Interface + dev</span></td><td>Sends the reset e-mail. LoggingAuthEmailSender only writes the link to the log.</td><td class="chg">Implement</td></tr>
+<tr><td><code>Program.cs · MainLayout.razor · appsettings.json</code></td><td><span class="chip y">Your files</span></td><td>Wire-up, Sign out menu, Auth settings. See the checklist below.</td><td class="chg">Edit</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="security">
+  <h2>What each protection stops</h2>
+  <div class="tbl"><table class="threats"><thead><tr><th>Attack</th><th>Protection</th><th>Where</th></tr></thead><tbody>
+    <tr><td>Guessing passwords</td><td>Lock for 15 min after 5 failures; same error text for every failure</td><td><code>AccountService.cs</code></td></tr>
+    <tr><td>Finding valid usernames</td><td>Dummy hash check for unknown users; forgot page shows one message and takes ≥ 1 s</td><td><code>AccountService.cs</code>, <code>ForgotPassword.razor</code></td></tr>
+    <tr><td>Stolen password database</td><td>PBKDF2-SHA512 hashes (100,000 rounds), reset tokens stored only as SHA-256</td><td><code>PasswordHasher&lt;T&gt;</code>, <code>PasswordResetService.cs</code></td></tr>
+    <tr><td>Cookie theft by script</td><td><code>HttpOnly</code>, <code>Secure</code>, <code>__Host-</code> prefix, <code>SameSite=Lax</code></td><td><code>AuthServiceCollectionExtensions.cs</code></td></tr>
+    <tr><td>Forged login or logout from another site</td><td>POST only, with antiforgery token; ticket usable once within 60 s</td><td><code>AccountEndpoints.cs</code>, <code>LoginTicketStore.cs</code></td></tr>
+    <tr><td>Redirect to a fake site after login</td><td>ReturnUrl must be a local path</td><td><code>UrlSafety.cs</code></td></tr>
+    <tr><td>Reset link pointing at an attacker's host</td><td>Links built from <code>PublicBaseUrl</code>, not the Host header</td><td><code>PasswordResetService.cs</code></td></tr>
+    <tr><td>Old sessions after a password change</td><td>Security stamp changes; both session checks compare it</td><td><code>CookieValidator.cs</code>, <code>AppRevalidatingAuthStateProvider.cs</code></td></tr>
+  </tbody></table></div>
+</section>
+
+<section id="setup">
+  <h2>Setup checklist</h2>
+  <ul class="check">
+    <li><b>Program.cs</b>: add <code>builder.Services.AddAppAuthentication(builder.Configuration, builder.Environment);</code>, register your <code>IAuthUserStore</code> and <code>IAuthEmailSender</code>, and add <code>app.MapAccountEndpoints();</code> before <code>MapRazorComponents</code>. Remove the old cookie and auth-state-provider registration.</li>
+    <li><b>appsettings.json</b>: add the <code>"Auth"</code> section with at least <code>PublicBaseUrl</code>.</li>
+    <li><b>Database</b>: add <code>PasswordHash</code>, <code>SecurityStamp</code>, <code>FailedLoginCount</code>, <code>LockoutEndUtc</code> to the user table and create <code>PasswordResetTokens</code>. SQL is in <code>docs/AUTH.md</code>.</li>
+    <li><b>IAuthUserStore</b>: implement it against your database. <b>IAuthEmailSender</b>: implement it with your SMTP service.</li>
+    <li><b>MainLayout.razor</b>: add <code>&lt;LogoutForm @ref="_logout" /&gt;</code>, a Sign out menu item that calls <code>_logout.SubmitAsync()</code>, and <code>&lt;IdleTimeoutMonitor /&gt;</code>.</li>
+    <li><b>App.razor</b>: keep <code>&lt;Routes @rendermode="InteractiveServer" /&gt;</code> with prerendering on. The antiforgery token comes from the prerendered page.</li>
+    <li><b>Existing passwords</b>: either ask everyone to reset, or verify the old hash format once in your store and re-save with the new hasher on the next login.</li>
+  </ul>
+  <pre>// Program.cs (order matters)
+builder.Services.AddAppAuthentication(builder.Configuration, builder.Environment);
+builder.Services.AddScoped&lt;IAuthUserStore, SqlAuthUserStore&gt;();   // yours
+builder.Services.AddScoped&lt;IAuthEmailSender, SmtpAuthEmailSender&gt;(); // yours
+
+app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseAntiforgery();
+app.MapAccountEndpoints();
+app.MapRazorComponents&lt;App&gt;().AddInteractiveServerRenderMode();</pre>
+  <div class="note-box">This code has not been compiled yet. <code>SqlAuthUserStore</code> and <code>SmtpAuthEmailSender</code> are example names for the classes you write.</div>
+</section>
+</div>
