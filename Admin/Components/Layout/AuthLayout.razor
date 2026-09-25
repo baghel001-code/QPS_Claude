@@ -1,16 +1,61 @@
 @inherits LayoutComponentBase
+@using Admin.Components.Account
 @using MudBlazor
 
-@* Centered card without the app's navigation, for the account pages. *@
-<MudThemeProvider />
+@* Split screen for the account pages: brand panel with illustration on the left, form card on the right.
+   Styles: wwwroot/css/auth.css. Brand colours: the --qps-* variables at the top of that file,
+   and _theme below (keep them the same). *@
+<HeadContent>
+    <link rel="stylesheet" href="css/auth.css" />
+</HeadContent>
+
+<MudThemeProvider Theme="_theme" />
 <MudPopoverProvider />
 
-<MudLayout>
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="d-flex align-center justify-center" Style="min-height:100vh">
-            <MudPaper Elevation="3" Class="pa-8" Style="width:100%; max-width:420px">
-                @Body
-            </MudPaper>
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+<div class="qps-auth">
+    <aside class="qps-brand">
+        <div class="qps-brand-top">
+            @* To use the official logo: put it at wwwroot/images/vmm-logo.png and replace this block with
+               <img src="images/vmm-logo.png" alt="Vishal Mega Mart" class="qps-logo-img" /> *@
+            <div class="qps-logo" aria-hidden="true">Q</div>
+            <div>
+                <div class="qps-wordmark">QPS</div>
+                <div class="qps-company">Vishal Mega Mart</div>
+            </div>
+        </div>
+
+        <div class="qps-brand-body">
+            <h1 class="qps-headline">Every shipment checked before it reaches the shelf.</h1>
+            <LoginIllustration />
+            <ul class="qps-features">
+                <li><span class="qps-dot"></span>Inspection requests and QC reports</li>
+                <li><span class="qps-dot"></span>PPS approvals, ASN and BFT tracking</li>
+                <li><span class="qps-dot"></span>Vendor management in one place</li>
+            </ul>
+        </div>
+
+        <div class="qps-brand-foot">© @DateTime.Now.Year Vishal Mega Mart · Internal use only</div>
+    </aside>
+
+    <main class="qps-panel">
+        <div class="qps-card">
+            @Body
+        </div>
+        <p class="qps-help">Trouble signing in? Contact the QPS support team.</p>
+    </main>
+</div>
+
+@code {
+    // Same colours as --qps-primary / --qps-accent in auth.css.
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#16456b",
+            Secondary = "#f2a516",
+            Success = "#1f9d74",
+            AppbarBackground = "#16456b",
+        },
+        LayoutProperties = new LayoutProperties { DefaultBorderRadius = "8px" },
+    };
+}
