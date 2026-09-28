@@ -96,7 +96,10 @@
     @* Employee passwords are managed centrally, so there is no self-service reset here. *@
     <p class="qps-note">
         <MudIcon Icon="@Icons.Material.Outlined.SupportAgent" Size="Size.Small" />
-        <span>Forgot your password? Employee passwords are managed by IT. Contact the IT helpdesk to reset it.</span>
+        <span>
+            Forgot your password? Employee passwords are managed in the
+            <a href="@MyVishalUrl" target="_blank" rel="noopener noreferrer">MyVishal app</a>.
+        </span>
     </p>
 }
 
@@ -117,6 +120,8 @@
 
 @code {
     private const string CompleteFormId = "login-complete";
+    // Employees reset their password here (opens in a new tab).
+    private const string MyVishalUrl = "https://myvishal.vishalmegamart.com:8025/login/login.aspx?ReturnUrl=%2fmypage%2f";
 
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
     [SupplyParameterFromQuery(Name = "ReturnUrl")] private string? ReturnUrl { get; set; }

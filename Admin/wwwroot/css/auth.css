@@ -236,6 +236,9 @@
     font-size: 13px; line-height: 1.45;
 }
 .qps-note .mud-icon-root { color: var(--qps-blue); flex: none; margin-top: 1px; }
+.qps-note a { color: var(--qps-blue); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.qps-note a:hover { color: var(--qps-primary); }
+.qps-note a:focus-visible { outline: 2px solid var(--qps-blue); outline-offset: 2px; border-radius: 2px; }
 
 /* ---------- small screens: brand panel becomes a header ---------- */
 @media (max-width: 900px) {
