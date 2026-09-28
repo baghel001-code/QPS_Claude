@@ -74,7 +74,7 @@
 
     <CaptchaField @ref="_captcha" @bind-Value="_model.Captcha" For="@(() => _model.Captcha)" Disabled="_busy" />
 
-    <div class="d-flex align-center justify-space-between my-4">
+    <div class="qps-options">
         <MudCheckBox T="bool" @bind-Value="_model.RememberMe" Label="Keep me signed in" Disabled="_busy" />
         @if (IsVendor)
         {

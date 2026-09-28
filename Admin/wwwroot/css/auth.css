@@ -220,6 +220,16 @@
 .qps-title { margin: 0 0 4px; font-size: 26px; font-weight: 700; color: var(--qps-ink); }
 .qps-sub { margin: 0 0 24px; font-size: 14px; color: var(--qps-muted); }
 
+/* "Keep me signed in" on the left, "Forgot password?" on the right. Own rules instead of
+   MudBlazor utility classes, because MudCheckBox's width differs between MudBlazor versions. */
+.qps-options {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    gap: 8px 16px; margin: 16px 0;
+}
+.qps-options .mud-input-control { flex: 0 1 auto !important; width: auto !important; margin: 0 !important; }
+.qps-options .mud-checkbox { margin-inline-start: -11px; }   /* line the box up with the fields */
+.qps-options a { margin-inline-start: auto; white-space: nowrap; }
+
 /* Employee / Vendor switch */
 .qps-tabs {
     display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
