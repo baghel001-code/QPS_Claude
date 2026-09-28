@@ -1,12 +1,10 @@
 namespace Admin.Auth.Captcha;
 
 /// <summary>
-/// Uses the company's VmmCaptcha library to draw the image, with the same settings as the old
-/// login page. Only the drawing comes from VmmCaptcha: the answer is kept by CaptchaService in
-/// server memory, never in HttpContext.Session, a cookie or the page.
-///
-/// Enable it in Program.cs:
-///     builder.Services.AddSingleton&lt;ICaptchaGenerator, VmmCaptchaGenerator&gt;();
+/// Draws CAPTCHA images with the company's VmmCaptcha library, using the same settings as the
+/// old login page. Registered by AddAppAuthentication. Only the drawing comes from VmmCaptcha:
+/// the answer is kept by CaptchaService in server memory, never in HttpContext.Session, a
+/// cookie or the page.
 /// </summary>
 public sealed class VmmCaptchaGenerator : ICaptchaGenerator
 {

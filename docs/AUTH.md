@@ -45,9 +45,9 @@ Self-hosted, no external scripts (the site's CSP only allows scripts from itself
 **No session:** `CaptchaService` keeps the answer in server memory under a random id; on the
 interactive page that id stays in the component's server-side state, so the browser only
 receives the PNG (as a data: URI, allowed by `img-src 'self' data:`), and the check runs in
-server code. The image comes from `ICaptchaGenerator`: `BuiltInCaptchaGenerator` by default, or
-the company library with `builder.Services.AddSingleton<ICaptchaGenerator, VmmCaptchaGenerator>();`
-in Program.cs. Each image is checked once, right or wrong,
+server code. The image is drawn by the company VmmCaptcha library through `VmmCaptchaGenerator`
+(registered by `AddAppAuthentication`). If it throws, the field shows an error with a refresh
+button and sign-in stays blocked until a code loads. Each image is checked once, right or wrong,
 then replaced, and expires after 5 minutes. The login page checks it before the password, so
 a script can't try passwords without solving a new image every time; lockout still applies.
 Not on Reset password (the e-mailed token already proves the request) or Logout.

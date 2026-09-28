@@ -7,22 +7,9 @@ public sealed record GeneratedCaptcha(string Answer, string ImageBase64);
 
 /// <summary>
 /// Draws CAPTCHA images. <see cref="CaptchaService"/> stores the answer and checks it;
-/// the generator only makes the text and the picture. Register one as a singleton.
+/// the generator only makes the text and the picture. The app uses <see cref="VmmCaptchaGenerator"/>.
 /// </summary>
 public interface ICaptchaGenerator
 {
     GeneratedCaptcha Generate();
-}
-
-/// <summary>Built-in generator (no external libraries). Used unless another one is registered.</summary>
-public sealed class BuiltInCaptchaGenerator : ICaptchaGenerator
-{
-    public GeneratedCaptcha Generate()
-    {
-        var chars = new char[5];
-        for (var i = 0; i < chars.Length; i++)
-            chars[i] = CaptchaImage.Alphabet[System.Security.Cryptography.RandomNumberGenerator.GetInt32(CaptchaImage.Alphabet.Length)];
-        var answer = new string(chars);
-        return new GeneratedCaptcha(answer, Convert.ToBase64String(CaptchaImage.RenderPng(answer)));
-    }
 }

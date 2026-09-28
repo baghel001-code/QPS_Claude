@@ -2,10 +2,13 @@
 @using Admin.Auth.Captcha
 @using MudBlazor
 @inject CaptchaService Captchas
+@inject ILogger<CaptchaField> Logger
 @implements IDisposable
 
 @*
-    Image CAPTCHA with a refresh button and the answer box. Bind the typed text with
+    Image CAPTCHA (drawn by VmmCaptcha on the server) with a refresh button and the answer box.
+    Nothing is stored in the session: CaptchaService keeps the answer in server memory and this
+    component holds only the challenge id, which never goes to the browser. Bind the typed text with
     @bind-Value, then in the submit handler:
         var ok = Captchas.Validate(captchaField.ChallengeId, model.Captcha);
         await captchaField.RefreshAsync();   // the challenge is used up either way
@@ -14,17 +17,21 @@
 *@
 <div class="qps-captcha">
     <div class="qps-captcha-row">
-        @if (_challenge is null)
+        @if (_challenge is not null)
         {
-            <div class="qps-captcha-img qps-captcha-loading" aria-hidden="true"></div>
+            <img class="qps-captcha-img" src="@_challenge.ImageDataUrl"
+                 alt="Security code image. If you can't read it, use the refresh button for a new one." />
+        }
+        else if (_failed)
+        {
+            <div class="qps-captcha-img qps-captcha-error" role="alert">Couldn't load the code. Use refresh to try again.</div>
         }
         else
         {
-            <img class="qps-captcha-img" src="@_challenge.ImageDataUrl" width="180" height="56"
-                 alt="Security code image. If you can't read it, use the refresh button for a new one." />
+            <div class="qps-captcha-img qps-captcha-loading" aria-hidden="true"></div>
         }
         <button type="button" class="qps-captcha-refresh" title="Show a different code" aria-label="Show a different code"
-                disabled="@(Disabled || _challenge is null)" @onclick="RefreshAsync">
+                disabled="@(Disabled || (_challenge is null && !_failed))" @onclick="RefreshAsync">
             <MudIcon Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" />
         </button>
     </div>
@@ -42,6 +49,7 @@
     [Parameter] public bool Disabled { get; set; }
 
     private CaptchaService.Challenge? _challenge;
+    private bool _failed;
 
     /// <summary>Id of the image on screen; pass it to CaptchaService.Validate.</summary>
     public string? ChallengeId => _challenge?.Id;
@@ -50,17 +58,34 @@
     {
         if (!firstRender)
             return;
-        _challenge = Captchas.Create();
+        LoadNew();
         StateHasChanged();
     }
 
     /// <summary>Shows a new image and clears the answer box.</summary>
     public async Task RefreshAsync()
     {
-        Captchas.Discard(_challenge?.Id);
-        _challenge = Captchas.Create();
+        LoadNew();
         await ValueChanged.InvokeAsync("");
         StateHasChanged();
+    }
+
+    private void LoadNew()
+    {
+        Captchas.Discard(_challenge?.Id);
+        _challenge = null;
+        try
+        {
+            _challenge = Captchas.Create();
+            _failed = false;
+        }
+        catch (Exception ex)
+        {
+            // e.g. VmmCaptcha/System.Drawing failing on the server. The form stays usable:
+            // Validate returns false without a challenge, so sign-in can't skip the check.
+            Logger.LogError(ex, "Could not generate a CAPTCHA image");
+            _failed = true;
+        }
     }
 
     public void Dispose() => Captchas.Discard(_challenge?.Id);
