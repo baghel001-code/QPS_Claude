@@ -69,10 +69,57 @@
     font-size: clamp(26px, 2.6vw, 36px); line-height: 1.2; font-weight: 700;
     text-wrap: balance;
 }
-.qps-features { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 15px; }
-.qps-features li { display: flex; align-items: center; gap: 10px; opacity: .92; }
 .qps-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(237,1,139,.6); flex: none; }
 .qps-brand-foot { font-size: 12px; opacity: .8; }
+
+/* ---------- slider ---------- */
+.qps-slider { display: flex; flex-direction: column; gap: 18px; }
+/* All slides share one grid cell, so the slider is as tall as the tallest slide and never jumps. */
+.qps-slides { display: grid; }
+.qps-slide {
+    grid-area: 1 / 1;
+    display: flex; flex-direction: column; gap: 18px;
+    opacity: 0; visibility: hidden; transform: translateX(28px);
+    transition: opacity .6s ease, transform .6s ease, visibility 0s linear .6s;
+}
+.qps-slide.active {
+    opacity: 1; visibility: visible; transform: none;
+    transition: opacity .6s ease, transform .6s ease, visibility 0s;
+}
+.qps-slide-media { display: flex; align-items: center; min-height: 0; }
+.qps-slide-photo {
+    width: 100%; max-width: 480px; aspect-ratio: 4 / 3; object-fit: cover;
+    border-radius: 16px; box-shadow: 0 18px 40px rgba(0, 25, 50, .35);
+    border: 4px solid rgba(255, 255, 255, .85);
+}
+.qps-slide-caption { margin: 0; max-width: 44ch; font-size: 15px; line-height: 1.5; opacity: .9; }
+
+.qps-slider-nav { display: flex; align-items: center; gap: 12px; }
+.qps-arrow {
+    display: grid; place-items: center; width: 34px; height: 34px;
+    border-radius: 50%; border: 1px solid rgba(255,255,255,.4);
+    padding: 0; box-shadow: none;
+    background: rgba(255,255,255,.08); color: #fff; cursor: pointer;
+    transition: background .15s;
+}
+.qps-arrow .mud-icon-root { width: 22px; height: 22px; }
+.qps-arrow:hover { background: rgba(255,255,255,.2); }
+.qps-dots { display: flex; gap: 8px; }
+.qps-dotbtn {
+    position: relative; overflow: hidden;
+    width: 10px; height: 10px; padding: 0; border: 0; border-radius: 5px; box-shadow: none;
+    background: rgba(255,255,255,.45); cursor: pointer;
+    transition: width .3s ease, background .3s;
+}
+.qps-dotbtn.active { width: 36px; background: rgba(255,255,255,.35); }
+.qps-dotbar {
+    position: absolute; inset: 0; transform-origin: left; background: var(--qps-brand);
+    animation: qps-fill 6s linear forwards;
+}
+.qps-dotbar.paused { animation-play-state: paused; }
+@keyframes qps-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.qps-arrow:focus-visible, .qps-dotbtn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.qps-headline-mobile { display: none; }
 
 /* ---------- illustration ---------- */
 .qps-art { width: 100%; max-width: 460px; height: auto; }
@@ -100,12 +147,42 @@
 .qps-art .a-stamp-text { fill: #ffffff; font: 800 20px "Segoe UI", system-ui, sans-serif; letter-spacing: 2px; }
 .qps-art .a-stamp-small { fill: #ffffff; font: 700 10px "Segoe UI", system-ui, sans-serif; letter-spacing: 2px; }
 .qps-art .a-dot { fill: #fff; opacity: .7; }
+.qps-art .a-card-shadow { filter: drop-shadow(0 8px 14px rgba(0, 25, 50, .3)); }
+/* slide 2: truck, ASN, calendar */
+.qps-art .a-road { fill: rgba(255,255,255,.35); }
+.qps-art .a-road-mark { fill: rgba(255,255,255,.7); }
+.qps-art .a-truck-box { fill: #fff; }
+.qps-art .a-truck-band { fill: var(--qps-brand); }
+.qps-art .a-truck-text { fill: #fff; font: 800 16px "Segoe UI", system-ui, sans-serif; letter-spacing: 3px; }
+.qps-art .a-truck-cab { fill: #0b4f86; }
+.qps-art .a-truck-window { fill: #cfe4f5; }
+.qps-art .a-truck-bumper { fill: #093a63; }
+.qps-art .a-wheel { fill: #1d2430; }
+.qps-art .a-hub { fill: #c9d2dd; }
+.qps-art .a-pill { fill: #fde6f3; }
+.qps-art .a-pill-text { fill: var(--qps-primary); font: 700 8px "Segoe UI", system-ui, sans-serif; letter-spacing: 1px; }
+.qps-art .a-cal-head { fill: var(--qps-brand); }
+.qps-art .a-cal-title { fill: #fff; font: 700 10px "Segoe UI", system-ui, sans-serif; letter-spacing: 2px; }
+.qps-art .a-booked { fill: var(--qps-blue); }
+.qps-art .a-drive { animation: qps-drive 6s ease-in-out infinite; }
+@keyframes qps-drive { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(10px); } }
+/* slide 3: report screen */
+.qps-art .a-screen { fill: #0b3d66; }
+.qps-art .a-stand { fill: rgba(255,255,255,.55); }
+.qps-art .a-ring-bg { fill: none; stroke: #e6ebf1; stroke-width: 12; }
+.qps-art .a-ring-val { fill: none; stroke: var(--qps-brand); stroke-width: 12; stroke-linecap: round; }
+.qps-art .a-big { fill: #1d2430; font: 800 22px "Segoe UI", system-ui, sans-serif; }
+.qps-art .a-small { fill: #625c6b; font: 600 9px "Segoe UI", system-ui, sans-serif; }
+.qps-art .a-bar { fill: #9cc3e4; }
+.qps-art .a-bar.hi { fill: var(--qps-blue); }
 
 .qps-art .a-float { animation: qps-float 6s ease-in-out infinite; }
 .qps-art .a-delay { animation-delay: -3s; }
 @keyframes qps-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @media (prefers-reduced-motion: reduce) {
-    .qps-art .a-float { animation: none; }
+    .qps-art .a-float, .qps-art .a-drive { animation: none; }
+    .qps-slide, .qps-slide.active { transition: none; transform: none; }
+    .qps-dotbar { animation: none; transform: scaleX(1); }
 }
 
 /* ---------- form side ---------- */
@@ -167,7 +244,8 @@
     .qps-brand-body { flex: none; gap: 8px; }
     .qps-headline { font-size: 20px; max-width: none; }
     .qps-logo-img { height: 28px; }
-    .qps-art, .qps-features, .qps-brand-foot { display: none; }
+    .qps-slider, .qps-brand-foot { display: none; }
+    .qps-headline-mobile { display: block; }
     .qps-panel { justify-content: flex-start; padding: 24px 16px 32px; }
     .qps-card { padding: 28px 22px 22px; margin-top: -8px; }
 }

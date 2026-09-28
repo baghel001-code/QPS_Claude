@@ -1,0 +1,153 @@
+@using MudBlazor
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+
+@*
+    Left-panel slider on the account pages. Advances every 6 s, pauses while the pointer is over it,
+    and can be moved with the arrows or dots. The first slide is rendered on page load, so the panel
+    is complete even before the interactive connection starts.
+
+    To use your own pictures: put them in wwwroot/images/login-slides/ and set ImageUrl on a slide
+    below (landscape, about 960 × 720 px, JPG or WebP under 200 KB). Slides without ImageUrl show
+    the built-in illustration.
+*@
+<section class="qps-slider" aria-roledescription="carousel" aria-label="About QPS"
+         @onmouseenter="() => _hovered = true" @onmouseleave="() => _hovered = false"
+         @onfocusin="() => _hovered = true" @onfocusout="() => _hovered = false">
+
+    <div class="qps-slides" aria-live="@(_interactive && !Paused ? "off" : "polite")">
+        @for (var i = 0; i < Slides.Length; i++)
+        {
+            var slide = Slides[i];
+            var active = i == _index;
+            <article class="qps-slide @(active ? "active" : "")" aria-roledescription="slide"
+                     aria-label="@($"{i + 1} of {Slides.Length}")" aria-hidden="@(active ? "false" : "true")">
+                <h1 class="qps-headline">@slide.Title</h1>
+                <div class="qps-slide-media">
+                    @if (slide.ImageUrl is not null)
+                    {
+                        <img src="@slide.ImageUrl" alt="@slide.ImageAlt" class="qps-slide-photo" loading="@(i == 0 ? "eager" : "lazy")" />
+                    }
+                    else
+                    {
+                        if (i % 3 == 0)
+                        {
+                            <LoginIllustration />
+                        }
+                        else if (i % 3 == 1)
+                        {
+                            <LoginIllustrationVendor />
+                        }
+                        else
+                        {
+                            <LoginIllustrationReports />
+                        }
+                    }
+                </div>
+                <p class="qps-slide-caption">@slide.Caption</p>
+            </article>
+        }
+    </div>
+
+    <div class="qps-slider-nav">
+        <button type="button" class="qps-arrow" aria-label="Previous slide" @onclick="Previous">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+        </button>
+        <div class="qps-dots" role="group" aria-label="Choose slide">
+            @for (var i = 0; i < Slides.Length; i++)
+            {
+                var n = i;
+                <button type="button" class="qps-dotbtn @(n == _index ? "active" : "")"
+                        aria-label="@($"Slide {n + 1}: {Slides[n].Title}")" aria-current="@(n == _index ? "true" : "false")"
+                        @onclick="() => Go(n)">
+                    @if (n == _index && _interactive)
+                    {
+                        @* Fills over one interval; restarted by the key when the slide changes. *@
+                        <span @key="_changeCount" class="qps-dotbar @(Paused ? "paused" : "")"></span>
+                    }
+                </button>
+            }
+        </div>
+        <button type="button" class="qps-arrow" aria-label="Next slide" @onclick="Next">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </button>
+    </div>
+</section>
+
+@code {
+    private sealed record Slide(string Title, string Caption, string? ImageUrl = null, string? ImageAlt = null);
+
+    // Edit the slides here. Example with a photo:
+    //   new("Fresh stock, checked at the DC.", "…", ImageUrl: "images/login-slides/dc.jpg", ImageAlt: "Cartons at the distribution centre"),
+    private static readonly Slide[] Slides =
+    [
+        new("Every shipment checked before it reaches the shelf.",
+            "Inspection requests, QC checklists and approvals for every purchase order."),
+        new("Vendors book inspections and share ASNs online.",
+            "Suppliers raise inspection requests, send ASNs and follow the status without chasing e-mails."),
+        new("QC results and reports in one place.",
+            "PPS approvals, BFT checks and inspection outcomes, ready for buyers and the QA team."),
+    ];
+
+    private static readonly TimeSpan Interval = TimeSpan.FromSeconds(6);
+
+    private readonly CancellationTokenSource _cts = new();
+    private int _index;
+    private int _changeCount;
+    private DateTime _shownAt = DateTime.UtcNow;
+    private bool _hovered;
+    private bool _interactive;
+
+    private bool Paused => _hovered;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // Runs only once the page is interactive (never during prerender).
+        if (!firstRender)
+            return;
+        _interactive = true;
+        _shownAt = DateTime.UtcNow;
+        StateHasChanged();
+        _ = AutoPlayAsync();
+    }
+
+    private async Task AutoPlayAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_cts.Token))
+            {
+                if (Paused)
+                {
+                    _shownAt = DateTime.UtcNow;   // resume with a full interval
+                    continue;
+                }
+                if (DateTime.UtcNow - _shownAt >= Interval)
+                    await InvokeAsync(() => { Show(_index + 1); StateHasChanged(); });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void Next() => Show(_index + 1);
+    private void Previous() => Show(_index - 1);
+    private void Go(int index) => Show(index);
+
+    private void Show(int index)
+    {
+        _index = ((index % Slides.Length) + Slides.Length) % Slides.Length;
+        _changeCount++;
+        _shownAt = DateTime.UtcNow;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}
