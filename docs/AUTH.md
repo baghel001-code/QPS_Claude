@@ -39,6 +39,18 @@ PBKDF2-SHA512 hashing with automatic upgrade (`PasswordHasher<T>`); the password
 the circuit and is cleared from memory; one-time ticket; antiforgery on the POST stops
 login-CSRF; `ReturnUrl` restricted to local paths (no open redirect); session cleared on sign-in.
 
+## CAPTCHA (login and forgot password)
+
+Self-hosted, no external scripts (the site's CSP only allows scripts from itself) and no NuGet
+packages. `CaptchaService` makes a 5-character code from an alphabet without look-alikes,
+keeps the answer on the server and sends the page only an id and a PNG drawn by `CaptchaImage`
+(data: URI, allowed by `img-src 'self' data:`). Each image is checked once, right or wrong,
+then replaced, and expires after 5 minutes. The login page checks it before the password, so
+a script can't try passwords without solving a new image every time; lockout still applies.
+Not on Reset password (the e-mailed token already proves the request) or Logout.
+Limits: a simple image CAPTCHA slows scripted attacks but can be read by determined OCR, and
+it has no audio version, so keep the refresh button and a helpdesk route for users who can't read it.
+
 ## Logout
 
 `LogoutForm` component = hidden `<form method=post action=/account/logout>` + antiforgery token.

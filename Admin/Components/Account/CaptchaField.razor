@@ -1,0 +1,67 @@
+@using System.Linq.Expressions
+@using Admin.Auth.Captcha
+@using MudBlazor
+@inject CaptchaService Captchas
+@implements IDisposable
+
+@*
+    Image CAPTCHA with a refresh button and the answer box. Bind the typed text with
+    @bind-Value, then in the submit handler:
+        var ok = Captchas.Validate(captchaField.ChallengeId, model.Captcha);
+        await captchaField.RefreshAsync();   // the challenge is used up either way
+    The image is created after the page becomes interactive, so a prerendered page
+    never shows a code that is thrown away a moment later.
+*@
+<div class="qps-captcha">
+    <div class="qps-captcha-row">
+        @if (_challenge is null)
+        {
+            <div class="qps-captcha-img qps-captcha-loading" aria-hidden="true"></div>
+        }
+        else
+        {
+            <img class="qps-captcha-img" src="@_challenge.ImageDataUrl" width="180" height="56"
+                 alt="Security code image. If you can't read it, use the refresh button for a new one." />
+        }
+        <button type="button" class="qps-captcha-refresh" title="Show a different code" aria-label="Show a different code"
+                disabled="@(Disabled || _challenge is null)" @onclick="RefreshAsync">
+            <MudIcon Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" />
+        </button>
+    </div>
+
+    <MudTextField T="string" Value="@Value" ValueChanged="@ValueChanged" For="@For"
+                  Label="Security code" Variant="Variant.Outlined" Disabled="@Disabled"
+                  MaxLength="@CaptchaService.Length" HelperText="Type the 5 characters shown. Not case-sensitive."
+                  autocomplete="off" autocapitalize="characters" spellcheck="false" />
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public Expression<Func<string>>? For { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private CaptchaService.Challenge? _challenge;
+
+    /// <summary>Id of the image on screen; pass it to CaptchaService.Validate.</summary>
+    public string? ChallengeId => _challenge?.Id;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        _challenge = Captchas.Create();
+        StateHasChanged();
+    }
+
+    /// <summary>Shows a new image and clears the answer box.</summary>
+    public async Task RefreshAsync()
+    {
+        Captchas.Discard(_challenge?.Id);
+        _challenge = Captchas.Create();
+        await ValueChanged.InvokeAsync("");
+        StateHasChanged();
+    }
+
+    public void Dispose() => Captchas.Discard(_challenge?.Id);
+}

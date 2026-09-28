@@ -5,6 +5,8 @@
 
 @using System.ComponentModel.DataAnnotations
 @using Admin.Auth
+@using Admin.Auth.Captcha
+@using Admin.Components.Account
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
@@ -14,6 +16,7 @@
 
 @inject AccountService Accounts
 @inject LoginTicketStore Tickets
+@inject CaptchaService Captchas
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject ILogger<Login> Logger
@@ -68,6 +71,8 @@
                   AdornmentAriaLabel="@(_showPassword ? "Hide password" : "Show password")"
                   OnAdornmentClick="() => _showPassword = !_showPassword"
                   Disabled="_busy" autocomplete="current-password" />
+
+    <CaptchaField @ref="_captcha" @bind-Value="_model.Captcha" For="@(() => _model.Captcha)" Disabled="_busy" />
 
     <div class="d-flex align-center justify-space-between my-4">
         <MudCheckBox T="bool" @bind-Value="_model.RememberMe" Label="Keep me signed in" Disabled="_busy" />
@@ -130,6 +135,7 @@
     [SupplyParameterFromQuery(Name = "type")] private string? Type { get; set; }   // "vendor" opens the Vendor tab
 
     private readonly LoginModel _model = new();
+    private CaptchaField? _captcha;
     private AccountType _type = AccountType.Employee;
     private bool IsVendor => _type == AccountType.Vendor;
     private string _returnUrl = "/";
@@ -172,6 +178,18 @@
 
         try
         {
+            // Checked first, so nobody can try passwords without solving a new image each time.
+            // Validate uses the image up, so show a fresh one whatever the outcome.
+            var captchaOk = Captchas.Validate(_captcha?.ChallengeId, _model.Captcha);
+            if (_captcha is not null)
+                await _captcha.RefreshAsync();
+            if (!captchaOk)
+            {
+                _error = "The security code didn't match. Type the characters in the new image.";
+                _busy = false;
+                return;
+            }
+
             var result = await Accounts.ValidateCredentialsAsync(_model.Login, _model.Password, _type);
             _model.Password = "";   // don't keep the password in circuit memory
 
@@ -236,5 +254,9 @@
         public string Password { get; set; } = "";
 
         public bool RememberMe { get; set; }
+
+        [Required(ErrorMessage = "Enter the security code.")]
+        [StringLength(CaptchaService.Length + 2)]
+        public string Captcha { get; set; } = "";
     }
 }
