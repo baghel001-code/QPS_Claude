@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Microsoft.AspNetCore.Identity;
 
 namespace Admin.Auth;
 
@@ -13,7 +12,7 @@ public sealed class InMemoryAuthUserStore : IAuthUserStore
     private readonly ConcurrentDictionary<string, (string UserId, DateTimeOffset ExpiresUtc)> _resetTokens = new();
     private readonly TimeProvider _clock;
 
-    public InMemoryAuthUserStore(IPasswordHasher<AuthUser> hasher, TimeProvider clock)
+    public InMemoryAuthUserStore(AppPasswordHasher hasher, TimeProvider clock)
     {
         _clock = clock;
         AuthUser[] seed =
@@ -24,7 +23,7 @@ public sealed class InMemoryAuthUserStore : IAuthUserStore
                 IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Vendor"], AccountType.Vendor),
         ];
         foreach (var user in seed)
-            _users[user.Id] = user with { PasswordHash = hasher.HashPassword(user, "ChangeMe!2026") };
+            _users[user.Id] = user with { PasswordHash = hasher.HashPassword("ChangeMe!2026") };
     }
 
     public Task<AuthUser?> FindByLoginAsync(string login, AccountType type, CancellationToken ct = default) =>

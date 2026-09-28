@@ -411,7 +411,7 @@ pre{font:12.5px/1.55 var(--mono);background:var(--soft);border:1px solid var(--l
   <div class="tbl"><table class="threats"><thead><tr><th>Attack</th><th>Protection</th><th>Where</th></tr></thead><tbody>
     <tr><td>Guessing passwords</td><td>Lock for 15 min after 5 failures; same error text for every failure</td><td><code>AccountService.cs</code></td></tr>
     <tr><td>Finding valid usernames</td><td>Dummy hash check for unknown users; forgot page shows one message and takes ≥ 1 s</td><td><code>AccountService.cs</code>, <code>ForgotPassword.razor</code></td></tr>
-    <tr><td>Stolen password database</td><td>PBKDF2-SHA512 hashes (100,000 rounds), reset tokens stored only as SHA-256</td><td><code>PasswordHasher&lt;T&gt;</code>, <code>PasswordResetService.cs</code></td></tr>
+    <tr><td>Stolen password database</td><td>Passwords hashed by the app's own <code>PasswordHasher</code>; reset tokens stored only as SHA-256</td><td><code>PasswordHasher</code>, <code>PasswordResetService.cs</code></td></tr>
     <tr><td>Cookie theft by script</td><td><code>HttpOnly</code>, <code>Secure</code>, <code>__Host-</code> prefix, <code>SameSite=Lax</code></td><td><code>AuthServiceCollectionExtensions.cs</code></td></tr>
     <tr><td>Forged login or logout from another site</td><td>POST only, with antiforgery token; ticket usable once within 60 s</td><td><code>AccountEndpoints.cs</code>, <code>LoginTicketStore.cs</code></td></tr>
     <tr><td>Redirect to a fake site after login</td><td>ReturnUrl must be a local path</td><td><code>UrlSafety.cs</code></td></tr>

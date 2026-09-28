@@ -1,7 +1,6 @@
 using Admin.Auth.Captcha;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Admin.Auth;
@@ -27,7 +26,7 @@ public static class AuthServiceCollectionExtensions
         var settings = section.Get<AuthSettings>() ?? new AuthSettings();
 
         services.TryAddSingleton(TimeProvider.System);
-        services.TryAddSingleton<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>(); // PBKDF2-SHA512, 100k iterations
+        // Password hashing uses the app's own IPasswordHasher, registered in Program.cs.
         services.AddSingleton<LoginTicketStore>();
         services.AddSingleton<ICaptchaGenerator, VmmCaptchaGenerator>();   // company VmmCaptcha library
         services.AddSingleton<CaptchaService>();

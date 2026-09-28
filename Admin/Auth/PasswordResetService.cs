@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
 namespace Admin.Auth;
@@ -14,7 +13,7 @@ public sealed record ResetPasswordResult(bool Succeeded, bool InvalidToken, IRea
 public sealed class PasswordResetService(
     IAuthUserStore store,
     IAuthEmailSender email,
-    IPasswordHasher<AuthUser> hasher,
+    AppPasswordHasher hasher,
     IOptions<AuthSettings> options,
     TimeProvider clock,
     ILogger<PasswordResetService> logger)
@@ -70,7 +69,7 @@ public sealed class PasswordResetService(
             return ResetPasswordResult.BadToken;
 
         // New security stamp => every existing session of this user is signed out.
-        await store.SetPasswordHashAsync(user.Id, hasher.HashPassword(user, newPassword), rotateSecurityStamp: true, ct);
+        await store.SetPasswordHashAsync(user.Id, hasher.HashPassword(newPassword), rotateSecurityStamp: true, ct);
         await store.ClearLockoutAsync(user.Id, ct);
         logger.LogInformation("Password reset completed for {UserId}", user.Id);
         return ResetPasswordResult.Success;

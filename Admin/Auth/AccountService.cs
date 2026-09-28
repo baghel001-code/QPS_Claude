@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
 namespace Admin.Auth;
@@ -13,15 +12,15 @@ public sealed record LoginResult(LoginStatus Status, AuthUser? User = null);
 /// </summary>
 public sealed class AccountService(
     IAuthUserStore store,
-    IPasswordHasher<AuthUser> hasher,
+    AppPasswordHasher hasher,
     IOptions<AuthSettings> options,
     TimeProvider clock,
     ILogger<AccountService> logger)
 {
-    // Verified against when the user does not exist, so "unknown user" takes as long as
-    // "wrong password" and response time does not reveal which usernames are real.
-    private static readonly string DummyHash =
-        new PasswordHasher<AuthUser>().HashPassword(null!, Guid.NewGuid().ToString());
+    // Verified against when the user does not exist (or has no password yet), so that case
+    // takes as long as "wrong password" and response time does not reveal real usernames.
+    // Made with the app's own hasher so the timing matches it.
+    private static string? _dummyHash;
 
     public async Task<LoginResult> ValidateCredentialsAsync(
         string login, string password, AccountType type, CancellationToken ct = default)
@@ -33,7 +32,7 @@ public sealed class AccountService(
         // The type check repeats the store's filter so a store bug can't let a vendor in through the employee tab.
         if (user is null || user.AccountType != type)
         {
-            hasher.VerifyHashedPassword(null!, DummyHash, password);
+            Verify(password, DummyHash());
             logger.LogInformation("Sign-in failed: unknown login");
             return new(LoginStatus.InvalidCredentials);
         }
@@ -45,8 +44,17 @@ public sealed class AccountService(
             return new(LoginStatus.LockedOut);
         }
 
-        var verification = hasher.VerifyHashedPassword(user, user.PasswordHash, password);
-        if (verification == PasswordVerificationResult.Failed)
+        bool passwordOk;
+        if (string.IsNullOrEmpty(user.PasswordHash))
+        {
+            Verify(password, DummyHash());   // no password set: always fails, but takes the same time
+            passwordOk = false;
+        }
+        else
+        {
+            passwordOk = Verify(password, user.PasswordHash);
+        }
+        if (!passwordOk)
         {
             var failures = await store.RecordFailedLoginAsync(user.Id, ct);
             if (failures >= settings.MaxFailedAttempts)
@@ -69,11 +77,23 @@ public sealed class AccountService(
         if (user.FailedLoginCount > 0 || user.LockoutEndUtc is not null)
             await store.ClearLockoutAsync(user.Id, ct);
 
-        // The hasher reports this when the stored hash uses older/weaker settings.
-        if (verification == PasswordVerificationResult.SuccessRehashNeeded)
-            await store.SetPasswordHashAsync(user.Id, hasher.HashPassword(user, password), rotateSecurityStamp: false, ct);
-
         logger.LogInformation("Credentials verified for {UserId}", user.Id);
         return new(LoginStatus.Success, user);
+    }
+
+    private string DummyHash() => _dummyHash ??= hasher.HashPassword(Guid.NewGuid().ToString("N"));
+
+    /// <summary>A hash the hasher can't parse (corrupt row, old format) counts as a wrong password.</summary>
+    private bool Verify(string password, string hash)
+    {
+        try
+        {
+            return hasher.VerifyPassword(password, hash);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Stored password hash could not be verified");
+            return false;
+        }
     }
 }

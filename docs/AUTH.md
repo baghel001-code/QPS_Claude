@@ -35,7 +35,7 @@ Browser (interactive page)            Server (circuit)                   Server 
 ```
 
 Protections: generic error text; lockout (5 tries / 15 min, configurable); constant-ish timing;
-PBKDF2-SHA512 hashing with automatic upgrade (`PasswordHasher<T>`); the password never leaves
+hashing with the application's own `IPasswordHasher` (`PasswordHasher`); the password never leaves
 the circuit and is cleared from memory; one-time ticket; antiforgery on the POST stops
 login-CSRF; `ReturnUrl` restricted to local paths (no open redirect); session cleared on sign-in.
 
@@ -195,9 +195,9 @@ DELETE FROM dbo.PasswordResetTokens OUTPUT DELETED.UserId
 WHERE TokenHash = @TokenHash AND ExpiresUtc > SYSUTCDATETIME();
 ```
 
-Existing passwords: `PasswordHasher<T>` can't verify hashes made by another algorithm. Either
-force a reset for everyone, or in your store verify the old format once and re-save with
-`PasswordHasher<T>` on the next successful login.
+Existing passwords keep working: the module verifies them with the same `PasswordHasher`
+that created them (`VerifyPassword`) and stores new ones with `HashPassword`. The namespace of
+`IPasswordHasher` is set once in `Admin/Auth/AuthUsings.cs`.
 
 ## Notes and limits
 
