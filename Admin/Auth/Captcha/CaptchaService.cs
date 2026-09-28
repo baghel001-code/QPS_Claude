@@ -5,15 +5,18 @@ using System.Text;
 namespace Admin.Auth.Captcha;
 
 /// <summary>
-/// Issues and checks image CAPTCHAs. The answer never leaves the server: the page gets an id
-/// and a PNG. Each challenge is single-use (checked once, right or wrong) and expires after
-/// 5 minutes.
+/// Issues and checks CAPTCHAs, entirely on the server and without HttpContext.Session.
+/// The answer is stored here in memory under a random id. On an interactive page that id stays
+/// in the component's server-side state, so the browser only ever receives the image.
+/// Each challenge is single-use (checked once, right or wrong) and expires after 5 minutes.
+/// The image itself comes from the registered <see cref="ICaptchaGenerator"/>.
 ///
 /// In-memory, like LoginTicketStore: fine for one server or sticky sessions.
 /// </summary>
-public sealed class CaptchaService(TimeProvider clock)
+public sealed class CaptchaService(ICaptchaGenerator generator, TimeProvider clock)
 {
-    public const int Length = 5;
+    /// <summary>Upper bound for the answer box; generators may use shorter codes.</summary>
+    public const int MaxLength = 12;
     private static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(5);
     private const int PruneThreshold = 10_000;
 
@@ -30,12 +33,10 @@ public sealed class CaptchaService(TimeProvider clock)
             foreach (var (key, e) in _challenges)
                 if (e.ExpiresUtc <= now) _challenges.TryRemove(key, out _);
 
-        var answer = RandomCode();
+        var generated = generator.Generate();
         var id = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
-        _challenges[id] = new Entry(answer, now + Lifetime);
-
-        var png = CaptchaImage.RenderPng(answer);
-        return new Challenge(id, "data:image/png;base64," + Convert.ToBase64String(png));
+        _challenges[id] = new Entry(Normalize(generated.Answer), now + Lifetime);
+        return new Challenge(id, "data:image/png;base64," + generated.ImageBase64);
     }
 
     /// <summary>
@@ -49,7 +50,7 @@ public sealed class CaptchaService(TimeProvider clock)
         if (entry.ExpiresUtc <= clock.GetUtcNow())
             return false;
 
-        var normalized = new string((typed ?? "").Where(c => !char.IsWhiteSpace(c)).ToArray()).ToUpperInvariant();
+        var normalized = Normalize(typed);
         return normalized.Length == entry.Answer.Length &&
                CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(normalized), Encoding.UTF8.GetBytes(entry.Answer));
     }
@@ -60,11 +61,6 @@ public sealed class CaptchaService(TimeProvider clock)
             _challenges.TryRemove(id, out _);
     }
 
-    private static string RandomCode()
-    {
-        var chars = new char[Length];
-        for (var i = 0; i < Length; i++)
-            chars[i] = CaptchaImage.Alphabet[RandomNumberGenerator.GetInt32(CaptchaImage.Alphabet.Length)];
-        return new string(chars);
-    }
+    private static string Normalize(string? text) =>
+        new string((text ?? "").Where(c => !char.IsWhiteSpace(c)).ToArray()).ToUpperInvariant();
 }

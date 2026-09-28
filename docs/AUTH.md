@@ -41,10 +41,13 @@ login-CSRF; `ReturnUrl` restricted to local paths (no open redirect); session cl
 
 ## CAPTCHA (login and forgot password)
 
-Self-hosted, no external scripts (the site's CSP only allows scripts from itself) and no NuGet
-packages. `CaptchaService` makes a 5-character code from an alphabet without look-alikes,
-keeps the answer on the server and sends the page only an id and a PNG drawn by `CaptchaImage`
-(data: URI, allowed by `img-src 'self' data:`). Each image is checked once, right or wrong,
+Self-hosted, no external scripts (the site's CSP only allows scripts from itself).
+**No session:** `CaptchaService` keeps the answer in server memory under a random id; on the
+interactive page that id stays in the component's server-side state, so the browser only
+receives the PNG (as a data: URI, allowed by `img-src 'self' data:`), and the check runs in
+server code. The image comes from `ICaptchaGenerator`: `BuiltInCaptchaGenerator` by default, or
+the company library with `builder.Services.AddSingleton<ICaptchaGenerator, VmmCaptchaGenerator>();`
+in Program.cs. Each image is checked once, right or wrong,
 then replaced, and expires after 5 minutes. The login page checks it before the password, so
 a script can't try passwords without solving a new image every time; lockout still applies.
 Not on Reset password (the e-mailed token already proves the request) or Logout.

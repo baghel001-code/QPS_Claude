@@ -31,7 +31,7 @@
 
     <MudTextField T="string" Value="@Value" ValueChanged="@ValueChanged" For="@For"
                   Label="Security code" Variant="Variant.Outlined" Disabled="@Disabled"
-                  MaxLength="@CaptchaService.Length" HelperText="Type the 5 characters shown. Not case-sensitive."
+                  MaxLength="@CaptchaService.MaxLength" HelperText="Type the characters shown. Not case-sensitive."
                   autocomplete="off" autocapitalize="characters" spellcheck="false" />
 </div>
 

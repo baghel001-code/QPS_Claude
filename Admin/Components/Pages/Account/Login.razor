@@ -256,7 +256,7 @@
         public bool RememberMe { get; set; }
 
         [Required(ErrorMessage = "Enter the security code.")]
-        [StringLength(CaptchaService.Length + 2)]
+        [StringLength(CaptchaService.MaxLength)]
         public string Captcha { get; set; } = "";
     }
 }

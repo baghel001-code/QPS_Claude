@@ -29,6 +29,7 @@ public static class AuthServiceCollectionExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>(); // PBKDF2-SHA512, 100k iterations
         services.AddSingleton<LoginTicketStore>();
+        services.TryAddSingleton<ICaptchaGenerator, BuiltInCaptchaGenerator>(); // replace with VmmCaptchaGenerator in Program.cs
         services.AddSingleton<CaptchaService>();
         services.AddScoped<AccountService>();
         services.AddScoped<PasswordResetService>();
