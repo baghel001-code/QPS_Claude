@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@using System.Reflection
 @using Admin.Components.Account
 @using MudBlazor
 
@@ -27,19 +28,31 @@
             @* Phones hide the slider and show this line instead. *@
             <p class="qps-headline qps-headline-mobile">Every shipment checked before it reaches the shelf.</p>
         </div>
-
-        <div class="qps-brand-foot">© @DateTime.Now.Year Vishal Mega Mart · Internal use only</div>
     </aside>
 
     <main class="qps-panel">
-        <div class="qps-card">
-            @Body
+        <div class="qps-panel-main">
+            <div class="qps-card">
+                @Body
+            </div>
+            <p class="qps-help">Trouble signing in? Contact the QPS support team.</p>
         </div>
-        <p class="qps-help">Trouble signing in? Contact the QPS support team.</p>
+
+        <footer class="qps-footer">
+            <span>Copyright © @DateTime.Now.ToString("yyyy") Vishal Mega Mart</span>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="qps-version">@AppVersion</MudChip>
+        </footer>
     </main>
 </div>
 
 @code {
+    // "App. Ver.1.4.2": the assembly's informational version without the "+<commit>" suffix
+    // the SDK appends. Read once; it can't change while the app runs.
+    private static readonly string AppVersion =
+        "App. Ver." + ((typeof(AuthLayout).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "NA")
+            .Split('+')[0]);
+
     // Same colours as the --qps-* variables in auth.css (taken from the Vishal Mega Mart logo).
     private readonly MudTheme _theme = new()
     {

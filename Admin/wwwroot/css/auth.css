@@ -70,7 +70,6 @@
     text-wrap: balance;
 }
 .qps-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(237,1,139,.6); flex: none; }
-.qps-brand-foot { font-size: 12px; opacity: .8; }
 
 /* ---------- slider ---------- */
 .qps-slider { display: flex; flex-direction: column; gap: 18px; }
@@ -187,9 +186,20 @@
 
 /* ---------- form side ---------- */
 .qps-panel {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 16px; padding: 40px 24px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 16px; padding: 40px 24px 16px;
 }
+/* Card and help line stay centred; the footer sits at the bottom of the form side. */
+.qps-panel-main {
+    flex: 1; width: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+}
+.qps-footer {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 10px;
+    width: 100%; padding-top: 14px; border-top: 1px solid #e6e0ea;
+    font-size: 12px; color: var(--qps-muted); text-align: center;
+}
+.qps-footer .qps-version { margin: 0; font-size: 11px; color: var(--qps-blue); border-color: #bcd6ec; }
 .qps-card {
     width: 100%; max-width: 420px;
     background: var(--qps-card);
@@ -277,8 +287,9 @@ div.qps-captcha-img { width: 180px; }
     .qps-brand-body { flex: none; gap: 8px; }
     .qps-headline { font-size: 20px; max-width: none; }
     .qps-logo-img { height: 28px; }
-    .qps-slider, .qps-brand-foot { display: none; }
+    .qps-slider { display: none; }
     .qps-headline-mobile { display: block; }
-    .qps-panel { justify-content: flex-start; padding: 24px 16px 32px; }
+    .qps-panel { padding: 24px 16px 16px; }
+    .qps-panel-main { justify-content: flex-start; }
     .qps-card { padding: 28px 22px 22px; margin-top: -8px; }
 }
