@@ -11,6 +11,7 @@ export async function submitForm(id, tokenUrl) {
     const response = await fetch(tokenUrl, { credentials: 'same-origin', cache: 'no-store' });
     if (!response.ok) throw new Error(`Antiforgery token request failed (${response.status})`);
     const { field, token } = await response.json();
+    if (!field || !token) throw new Error('Antiforgery token response was empty');
 
     let input = form.querySelector(`input[name="${field}"]`);
     if (!input) {

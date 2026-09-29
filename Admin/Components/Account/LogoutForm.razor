@@ -35,7 +35,7 @@
         _submitPending = false;
         try
         {
-            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/auth.js");
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", AuthConstants.AuthScriptUrl);
             await _module.InvokeVoidAsync("submitForm", _formId, AuthConstants.AntiforgeryTokenEndpoint);
         }
         catch (Exception ex) when (ex is JSDisconnectedException or JSException or TaskCanceledException)

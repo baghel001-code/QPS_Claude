@@ -23,6 +23,10 @@ public static class AuthConstants
     // GET: returns a fresh antiforgery token (and sets its cookie) for the two POSTs above.
     // Used by wwwroot/js/auth.js so the forms work whether or not the page was prerendered.
     public const string AntiforgeryTokenEndpoint = "/account/antiforgery-token";
+
+    // Browsers cache JS modules loaded with import() very aggressively; bump the version
+    // whenever wwwroot/js/auth.js changes so every user gets the new file.
+    public const string AuthScriptUrl = "./js/auth.js?v=2026092902";
 }
 
 public static class AuthClaimTypes
