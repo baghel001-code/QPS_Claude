@@ -29,7 +29,15 @@
 
     private string _firstName = "";
 
-    private static string Greeting => DateTime.Now.Hour switch { < 12 => "Good morning", < 17 => "Good afternoon", _ => "Good evening" };
+    // Not a "switch { < 12 => ... }" expression: in a .razor @code block, "{ <" is read as the start of HTML markup.
+    private static string Greeting
+    {
+        get
+        {
+            var hour = DateTime.Now.Hour;
+            return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
