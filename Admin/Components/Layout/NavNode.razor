@@ -1,0 +1,23 @@
+@using Admin.Navigation
+@using Microsoft.AspNetCore.Components.Routing
+@using MudBlazor
+
+@* One menu entry: a link, or a group that renders its children (recursively). *@
+@if (Node.IsGroup)
+{
+    <MudNavGroup Title="@Node.Title" Icon="@Node.Icon" Expanded="@Expanded">
+        @foreach (var child in Node.Children!)
+        {
+            <NavNode Node="child" Expanded="true" />
+        }
+    </MudNavGroup>
+}
+else
+{
+    <MudNavLink Href="@Node.Href" Icon="@Node.Icon" Match="NavLinkMatch.All">@Node.Title</MudNavLink>
+}
+
+@code {
+    [Parameter, EditorRequired] public MenuNode Node { get; set; } = default!;
+    [Parameter] public bool Expanded { get; set; }
+}

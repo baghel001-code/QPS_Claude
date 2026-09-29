@@ -4,9 +4,8 @@ namespace Admin.Auth;
 
 /// <summary>
 /// DEVELOPMENT ONLY. Loses everything on restart and does not work across servers.
-/// Seeds employees admin (Admin), buyer1 (Buyer), qa1 (QA), qam1 (QAM) and staff1 (no role),
-/// and vendor vendor1 (must change password) / vendor2, all with password ChangeMe!2026,
-/// to try each dashboard and menu.
+/// Seeds one user per role (login = role, e.g. "qa", "qam", "buyer", "admin"), a multi-role user
+/// ("multi"), an employee with no role ("staff") and two vendors; password ChangeMe!2026.
 /// </summary>
 public sealed class InMemoryAuthUserStore : IAuthUserStore
 {
@@ -19,21 +18,24 @@ public sealed class InMemoryAuthUserStore : IAuthUserStore
         _clock = clock;
         AuthUser[] seed =
         [
-            new("E:1", "admin", "admin@example.com", "Administrator", "", NewStamp(),
-                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Admin"], AccountType.Employee),
-            new("E:2", "qa1", "qa1@example.com", "Priya Rao", "", NewStamp(),
-                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["QA"], AccountType.Employee),
-            new("E:3", "qam1", "qam1@example.com", "Neha Gupta", "", NewStamp(),
-                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["QAM"], AccountType.Employee),
-            new("E:4", "buyer1", "buyer1@example.com", "Sana Ali", "", NewStamp(),
-                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Buyer"], AccountType.Employee),
-            new("E:5", "staff1", "staff1@example.com", "Rohit Patel", "", NewStamp(),
-                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: [], AccountType.Employee),
-            new("V:2", "vendor2", "vendor2@example.com", "Kaveri Knitwear", "", NewStamp(),
-                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Vendor"], AccountType.Vendor),
-            new("V:1", "vendor1", "vendor1@example.com", "Sample Vendor Pvt Ltd", "", NewStamp(),
-                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Vendor"], AccountType.Vendor)
-            { MustChangePassword = true },
+            Employee("E:1", "admin", "Rohit Patel", [QpsRoles.Administrator]) with { Modules = [QpsRoles.ModuleUserManagement, QpsRoles.ModuleMenu] },
+            Employee("E:2", "admin5", "Meera Iyer", [QpsRoles.Admin]),
+            Employee("E:3", "qaadmin", "Neha Gupta", [QpsRoles.QAAdmin]),
+            Employee("E:4", "qam", "Amit Sharma", [QpsRoles.QAM]),
+            Employee("E:5", "qa", "Priya Rao", [QpsRoles.QA]),
+            Employee("E:6", "ch", "Rakesh Verma", [QpsRoles.CategoryHead]),
+            Employee("E:7", "ach", "Pooja Nair", [QpsRoles.AssociateCategoryHead]),
+            Employee("E:8", "merch", "Karan Mehta", [QpsRoles.Merchandiser]),
+            Employee("E:9", "buyer", "Sana Ali", [QpsRoles.Buyer]),
+            Employee("E:10", "qc", "Vivek Singh", [QpsRoles.QC]),
+            Employee("E:11", "view", "Anita Das", [QpsRoles.View]),
+            Employee("E:12", "asn", "Manoj Kumar", [QpsRoles.ASN]),
+            Employee("E:13", "bft", "Deepak Joshi", [QpsRoles.BFT]),
+            Employee("E:14", "cm", "Ritu Malhotra", [QpsRoles.CM]),
+            Employee("E:15", "multi", "Sanjay Rao", [QpsRoles.QAM, QpsRoles.QAAdmin]),
+            Employee("E:16", "staff", "Arjun Menon", []),
+            Vendor("V:1", "vendor1", "Sample Vendor Pvt Ltd") with { MustChangePassword = true },
+            Vendor("V:2", "vendor2", "Kaveri Knitwear"),
         ];
         foreach (var user in seed)
             _users[user.Id] = user with { PasswordHash = hasher.HashPassword("ChangeMe!2026") };
@@ -97,4 +99,12 @@ public sealed class InMemoryAuthUserStore : IAuthUserStore
     }
 
     private static string NewStamp() => Guid.NewGuid().ToString("N");
+
+    private static AuthUser Employee(string id, string login, string name, string[] roles) =>
+        new(id, login, $"{login}@example.com", name, "", NewStamp(), IsActive: true, FailedLoginCount: 0,
+            LockoutEndUtc: null, Roles: roles, AccountType.Employee);
+
+    private static AuthUser Vendor(string id, string login, string name) =>
+        new(id, login, $"{login}@example.com", name, "", NewStamp(), IsActive: true, FailedLoginCount: 0,
+            LockoutEndUtc: null, Roles: [QpsRoles.Vendor], AccountType.Vendor);
 }

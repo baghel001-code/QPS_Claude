@@ -7,7 +7,7 @@
 
 @*
     Shared layout for every page after sign-in: top bar (logo, user menu, sign out) and a
-    left drawer whose menu depends on the user's account type and roles (AppNavMenu / AppMenu).
+    left drawer whose menu depends on the user's role IDs and modules (AppNavMenu / AppMenu).
     Use it with @layout DashboardLayout, or make it the default in Routes.razor:
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.DashboardLayout)" />
     Needs interactive rendering (the drawer toggle and idle timeout run in the circuit).
@@ -69,7 +69,7 @@
                 <span class="qps-appbar-product">QPS</span>
             </a>
         </MudDrawerHeader>
-        <AppNavMenu />
+        <AppNavMenu SignOut="SignOutAsync" />
     </MudDrawer>
 
     <MudMainContent Class="qps-main">
@@ -101,8 +101,5 @@
         return string.Concat(parts.Take(2).Select(p => char.ToUpperInvariant(p[0])));
     }
 
-    private static string Subtitle(ClaimsPrincipal user) =>
-        AppPolicies.IsType(user, AccountType.Vendor)
-            ? "Vendor"
-            : string.Join(" · ", user.FindAll(ClaimTypes.Role).Select(r => r.Value).DefaultIfEmpty("Employee"));
+    private static string Subtitle(ClaimsPrincipal user) => QpsRoles.Describe(user);
 }

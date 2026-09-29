@@ -54,54 +54,42 @@ Not on Reset password (the e-mailed token already proves the request) or Logout.
 Limits: a simple image CAPTCHA slows scripted attacks but can be read by determined OCR, and
 it has no audio version, so keep the refresh button and a helpdesk route for users who can't read it.
 
-## Landing page after sign-in
+## Home page, dashboards and menu
 
-`LandingPageResolver` picks the page from the claims set at sign-in, in this order:
+Everyone lands on **`/`** after signing in (only users who must change their password go to
+`Auth:LandingPages:ChangePassword` first; a real `ReturnUrl` from a protected page still wins).
 
-1. `must_change_password` claim (`AuthUser.MustChangePassword`) → `ChangePassword`, always first
-2. Vendor → `Vendor`
-3. Employee → first entry in `EmployeeRoles` whose role the user has (case-insensitive), else `EmployeeDefault`
+`Components/Pages/Home.razor` uses `DashboardLayout` (top bar, left menu, footer) and shows one
+dashboard picked by `HomeDashboards` from the user's **primary role**:
 
-If the user was sent to the login page from a protected page (a real `ReturnUrl`), they go back
-there instead of the dashboard. Paths are configured, not hard-coded:
+| Priority | Role ID | Name | Dashboard |
+|---|---|---|---|
+| — | Vendor | Vendor | Vendor |
+| 1 | 1 | Administrator | Administrator |
+| 2 | 5 | Admin | Admin |
+| 3 | 1008 | QA Admin | QA admin |
+| 4 | 1007 | QAM | QA manager |
+| 5 | 1006 | QA | QA |
+| 6 | 1010 | Category Head | Category head |
+| 7 | 1011 | Associate Category Head | Associate category head |
+| 8 | 1012 | Merchandiser | Merchandiser |
+| 9 | 2 | Buyer | Buyer |
+| 10 | 3 | QC | QC |
+| 11 | 1014 | ASN | ASN |
+| 12 | 1013 | BFT | BFT |
+| 13 | 1009 | CM | CM |
+| 14 | 4 | View | Overview (read-only) |
+| — | none | | "No role yet" |
 
-```json
-"Auth": {
-  "LandingPages": {
-    "ChangePassword": "/changepassword",
-    "Vendor": "/VendorDashboard",
-    "EmployeeDefault": "/EmployeeDashboard",
-    "EmployeeRoles": [
-      { "Role": "Admin", "Path": "/AdminDashboard" },
-      { "Role": "QAM",   "Path": "/QAMDashboard" },
-      { "Role": "QA",    "Path": "/QADashboard" },
-      { "Role": "Buyer", "Path": "/BuyerDashboard" }
-    ]
-  }
-}
-```
+All dashboards are dummies with **sample data** (`DashboardCatalog`), rendered by `RoleDashboard`.
+To replace one with a real component, register it in `HomeDashboards.Custom`.
 
-Role names must match what your `IAuthUserStore` puts in `AuthUser.Roles`. Put `<RedirectToLanding />`
-on the home page so opening "/" also takes signed-in users to their dashboard.
-
-## Dashboards and the left menu
-
-Every page after sign-in uses `Components/Layout/DashboardLayout.razor`: top bar (logo, user
-menu with Sign out), a left drawer with `AppNavMenu`, and the copyright/version footer.
-
-| Page | Route | Who can open it (`AppPolicies`) |
-|---|---|---|
-| Admin | `/AdminDashboard` | employee with role Admin |
-| Buyer | `/BuyerDashboard` | employee with role Buyer |
-| QA | `/QADashboard` | employee with role QA |
-| QA manager | `/QAMDashboard` | employee with role QAM |
-| Employee (no matching role) | `/EmployeeDashboard` | any employee |
-| Vendor | `/VendorDashboard` | any vendor |
-
-The menu is one list in `Navigation/AppMenu.cs`. Each `MenuItem` says which account type and
-which roles see it; `Ready: false` sends the link to `/coming-soon` until the page exists.
-Hiding a menu item is only convenience; each page still needs `[Authorize(Policy = ...)]`.
-Figures on the dashboards are sample data (marked "Prototype · sample data").
+The left menu (`Navigation/AppMenu.cs`) follows the old `NavMenu.razor` rules, using role IDs
+(`Auth/QpsRoles.cs`) and the `User_Management` / `Menu` modules (claims from `AuthUser.Modules`).
+Differences: Category Head (1010) now gets the inspection links (the old code tested `isACH || isACH`),
+groups with the same title are merged, and duplicate links are dropped. Admin (5), BFT (1013) and
+CM (1009) have no menu groups yet, as before. Dynamic items from `GET_MENUS_LIST` still need adding
+under the "Menu" group.
 
 ## Logout
 

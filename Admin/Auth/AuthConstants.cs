@@ -36,4 +36,5 @@ public static class AuthClaimTypes
     public const string DisplayName = "display_name";
     public const string AccountType = "account_type";   // "Employee" or "Vendor"
     public const string MustChangePassword = "must_change_password";   // "true" when present
+    public const string Module = "qps_module";                          // one claim per module, e.g. "User_Management"
 }
