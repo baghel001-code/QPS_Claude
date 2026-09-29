@@ -16,6 +16,7 @@
 
 @inject AccountService Accounts
 @inject LoginTicketStore Tickets
+@inject LandingPageResolver Landing
 @inject CaptchaService Captchas
 @inject NavigationManager Nav
 @inject IJSRuntime JS
@@ -152,9 +153,10 @@
         _returnUrl = UrlSafety.LocalOrRoot(ReturnUrl);
         _type = string.Equals(Type, "vendor", StringComparison.OrdinalIgnoreCase) ? AccountType.Vendor : AccountType.Employee;
 
-        if (AuthState is not null && (await AuthState).User.Identity?.IsAuthenticated == true)
+        if (AuthState is not null && (await AuthState).User is { Identity.IsAuthenticated: true } signedIn)
         {
-            Nav.NavigateTo(_returnUrl, replace: true);
+            // Already signed in: go to the requested page, or to this user's dashboard.
+            Nav.NavigateTo(Landing.AfterSignIn(signedIn, _returnUrl), replace: true);
             return;
         }
 

@@ -30,6 +30,7 @@ public static class AuthServiceCollectionExtensions
         services.AddSingleton<LoginTicketStore>();
         services.AddSingleton<ICaptchaGenerator, VmmCaptchaGenerator>();   // company VmmCaptcha library
         services.AddSingleton<CaptchaService>();
+        services.AddSingleton<LandingPageResolver>();
         services.AddScoped<AccountService>();
         services.AddScoped<PasswordResetService>();
 

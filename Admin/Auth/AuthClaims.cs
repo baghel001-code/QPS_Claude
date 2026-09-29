@@ -18,6 +18,8 @@ public static class AuthClaims
             new(AuthClaimTypes.AuthTime, signedInAt.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture)),
         };
         claims.AddRange(user.Roles.Select(r => new Claim(ClaimTypes.Role, r)));
+        if (user.MustChangePassword)
+            claims.Add(new Claim(AuthClaimTypes.MustChangePassword, "true"));
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims, AuthConstants.Scheme, ClaimTypes.Name, ClaimTypes.Role));
     }

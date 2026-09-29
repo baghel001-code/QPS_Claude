@@ -54,6 +54,36 @@ Not on Reset password (the e-mailed token already proves the request) or Logout.
 Limits: a simple image CAPTCHA slows scripted attacks but can be read by determined OCR, and
 it has no audio version, so keep the refresh button and a helpdesk route for users who can't read it.
 
+## Landing page after sign-in
+
+`LandingPageResolver` picks the page from the claims set at sign-in, in this order:
+
+1. `must_change_password` claim (`AuthUser.MustChangePassword`) → `ChangePassword`, always first
+2. Vendor → `Vendor`
+3. Employee → first entry in `EmployeeRoles` whose role the user has (case-insensitive), else `EmployeeDefault`
+
+If the user was sent to the login page from a protected page (a real `ReturnUrl`), they go back
+there instead of the dashboard. Paths are configured, not hard-coded:
+
+```json
+"Auth": {
+  "LandingPages": {
+    "ChangePassword": "/changepassword",
+    "Vendor": "/VendorDashboard",
+    "EmployeeDefault": "/EmployeeDashboard",
+    "EmployeeRoles": [
+      { "Role": "Admin", "Path": "/AdminDashboard" },
+      { "Role": "QAM",   "Path": "/QAMDashboard" },
+      { "Role": "QA",    "Path": "/QADashboard" },
+      { "Role": "Buyer", "Path": "/BuyerDashboard" }
+    ]
+  }
+}
+```
+
+Role names must match what your `IAuthUserStore` puts in `AuthUser.Roles`. Put `<RedirectToLanding />`
+on the home page so opening "/" also takes signed-in users to their dashboard.
+
 ## Logout
 
 `LogoutForm` component = hidden `<form method=post action=/account/sign-out>` + antiforgery token.

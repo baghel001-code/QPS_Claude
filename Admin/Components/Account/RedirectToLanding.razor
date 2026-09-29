@@ -1,0 +1,29 @@
+@using Admin.Auth
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Nav
+@inject LandingPageResolver Landing
+
+@*
+    Put this at the top of the home page ("/") so a signed-in user who opens "/" (logo click,
+    bookmark) is sent to their own dashboard:
+        @page "/"
+        <RedirectToLanding />
+    Does nothing for anonymous users, or when the user's landing page is "/" itself.
+*@
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is null)
+            return;
+        var user = (await AuthState).User;
+        if (user.Identity?.IsAuthenticated != true)
+            return;
+
+        var target = Landing.For(user);
+        if (target != "/" && !Nav.ToBaseRelativePath(Nav.Uri).Equals(target.TrimStart('/'), StringComparison.OrdinalIgnoreCase))
+            Nav.NavigateTo(target, replace: true);
+    }
+}

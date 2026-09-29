@@ -4,7 +4,8 @@ namespace Admin.Auth;
 
 /// <summary>
 /// DEVELOPMENT ONLY. Loses everything on restart and does not work across servers.
-/// Seeds an employee (admin / ChangeMe!2026) and a vendor (vendor1 / ChangeMe!2026).
+/// Seeds employees admin (Admin role) and qa1 (QA role), and vendor vendor1 (must change password),
+/// all with password ChangeMe!2026, to try the landing pages.
 /// </summary>
 public sealed class InMemoryAuthUserStore : IAuthUserStore
 {
@@ -19,8 +20,11 @@ public sealed class InMemoryAuthUserStore : IAuthUserStore
         [
             new("E:1", "admin", "admin@example.com", "Administrator", "", NewStamp(),
                 IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Admin"], AccountType.Employee),
+            new("E:2", "qa1", "qa1@example.com", "QA Inspector", "", NewStamp(),
+                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["QA"], AccountType.Employee),
             new("V:1", "vendor1", "vendor1@example.com", "Sample Vendor Pvt Ltd", "", NewStamp(),
-                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Vendor"], AccountType.Vendor),
+                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Vendor"], AccountType.Vendor)
+            { MustChangePassword = true },
         ];
         foreach (var user in seed)
             _users[user.Id] = user with { PasswordHash = hasher.HashPassword("ChangeMe!2026") };

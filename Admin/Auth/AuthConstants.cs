@@ -35,4 +35,5 @@ public static class AuthClaimTypes
     public const string AuthTime = "auth_time";     // unix seconds of the sign-in
     public const string DisplayName = "display_name";
     public const string AccountType = "account_type";   // "Employee" or "Vendor"
+    public const string MustChangePassword = "must_change_password";   // "true" when present
 }

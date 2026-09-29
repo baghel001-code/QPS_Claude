@@ -17,4 +17,11 @@ public sealed record AuthUser(
     int FailedLoginCount,
     DateTimeOffset? LockoutEndUtc,
     IReadOnlyList<string> Roles,
-    AccountType AccountType);
+    AccountType AccountType)
+{
+    /// <summary>
+    /// True while the user still has a default/temporary password (the old page's
+    /// Default_Password_Changed == false). They land on the change-password page first.
+    /// </summary>
+    public bool MustChangePassword { get; init; }
+}

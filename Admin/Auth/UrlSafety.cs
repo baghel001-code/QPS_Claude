@@ -26,8 +26,8 @@ public static class UrlSafety
         return url;
     }
 
-    private static bool IsLocal(string url) =>
-        url[0] == '/'
+    public static bool IsLocal(string url) =>
+        url.Length > 0 && url[0] == '/'
         // "//host" and "/\host" are treated as absolute URLs by browsers.
         && !(url.Length > 1 && (url[1] == '/' || url[1] == '\\'))
         && !url.Any(char.IsControl);
