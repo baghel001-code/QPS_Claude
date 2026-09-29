@@ -84,6 +84,25 @@ there instead of the dashboard. Paths are configured, not hard-coded:
 Role names must match what your `IAuthUserStore` puts in `AuthUser.Roles`. Put `<RedirectToLanding />`
 on the home page so opening "/" also takes signed-in users to their dashboard.
 
+## Dashboards and the left menu
+
+Every page after sign-in uses `Components/Layout/DashboardLayout.razor`: top bar (logo, user
+menu with Sign out), a left drawer with `AppNavMenu`, and the copyright/version footer.
+
+| Page | Route | Who can open it (`AppPolicies`) |
+|---|---|---|
+| Admin | `/AdminDashboard` | employee with role Admin |
+| Buyer | `/BuyerDashboard` | employee with role Buyer |
+| QA | `/QADashboard` | employee with role QA |
+| QA manager | `/QAMDashboard` | employee with role QAM |
+| Employee (no matching role) | `/EmployeeDashboard` | any employee |
+| Vendor | `/VendorDashboard` | any vendor |
+
+The menu is one list in `Navigation/AppMenu.cs`. Each `MenuItem` says which account type and
+which roles see it; `Ready: false` sends the link to `/coming-soon` until the page exists.
+Hiding a menu item is only convenience; each page still needs `[Authorize(Policy = ...)]`.
+Figures on the dashboards are sample data (marked "Prototype · sample data").
+
 ## Logout
 
 `LogoutForm` component = hidden `<form method=post action=/account/sign-out>` + antiforgery token.

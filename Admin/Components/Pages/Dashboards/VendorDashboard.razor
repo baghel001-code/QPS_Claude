@@ -1,0 +1,57 @@
+@page "/VendorDashboard"
+@layout Admin.Components.Layout.DashboardLayout
+@attribute [Authorize(Policy = AppPolicies.Vendor)]
+@using Admin.Auth
+@using Admin.Components.Dashboard
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+
+<PageTitle>Vendor dashboard · QPS</PageTitle>
+
+<DashboardHeader Title="Vendor dashboard" Subtitle="Book inspections for your purchase orders and keep your ASNs up to date.">
+    <MudButton Href="/coming-soon?page=Raise%20inspection%20request&path=%2FVendor%2FInspectionRequest" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddTask">Raise inspection request</MudButton>
+    <MudButton Href="/coming-soon?page=ASN&path=%2FVendor%2FAsn" Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.LocalShipping">Send ASN</MudButton>
+</DashboardHeader>
+
+<div class="qps-kpis">
+    <KpiTile Label="Open purchase orders" Value="7" Note="3 ready for inspection" Icon="@Icons.Material.Outlined.ReceiptLong" Tone="blue" />
+    <KpiTile Label="Inspections booked" Value="2" Note="Next: 01 Oct, 11:00" Icon="@Icons.Material.Outlined.EventAvailable" Tone="green" />
+    <KpiTile Label="ASNs sent" Value="4" Note="1 waiting for DC slot" Icon="@Icons.Material.Outlined.LocalShipping" Tone="amber" />
+    <KpiTile Label="Failed inspections, 30 days" Value="1" Note="Re-inspection booked" Icon="@Icons.Material.Outlined.ReportProblem" Tone="red" />
+</div>
+
+<div class="qps-grid-2">
+    <DashCard Title="Your inspection requests">
+        <div class="qps-table-wrap">
+            <table class="qps-table">
+                <thead><tr><th>Request</th><th>PO</th><th>Category</th><th>Date</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var r in Requests)
+                    {
+                        <tr><td class="num">@r.Id</td><td class="num">@r.Po</td><td>@r.Category</td><td class="num">@r.Date</td><td><StatusChip Status="@r.Status" /></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </DashCard>
+
+    <DashCard Title="Before your next inspection">
+        <ul class="qps-list">
+            <li><span><b>Keep 10% of cartons open</b><br /><small>For the random sample on PO 4500129051</small></span></li>
+            <li><span><b>Upload the packing list</b><br /><small>At least one day before the inspection</small></span><StatusChip Status="Pending" /></li>
+            <li><span><b>Share the inspection contact</b><br /><small>Name and phone of the person on site</small></span><StatusChip Status="Done" /></li>
+        </ul>
+    </DashCard>
+</div>
+
+@code {
+    private sealed record Row(string Id, string Po, string Category, string Date, string Status);
+
+    private static readonly Row[] Requests =
+    [
+        new("IR-24807", "4500129051", "Kids' T-shirts", "01 Oct", "Scheduled"),
+        new("IR-24751", "4500128930", "Kids' shorts", "03 Oct", "Awaiting assignment"),
+        new("IR-24690", "4500128841", "Kids' T-shirts", "24 Sep", "Passed"),
+        new("IR-24612", "4500128702", "Girls' dresses", "18 Sep", "Failed"),
+    ];
+}

@@ -1,0 +1,61 @@
+@page "/QADashboard"
+@layout Admin.Components.Layout.DashboardLayout
+@attribute [Authorize(Policy = AppPolicies.QA)]
+@using Admin.Auth
+@using Admin.Components.Dashboard
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+
+<PageTitle>QA dashboard · QPS</PageTitle>
+
+<DashboardHeader Title="QA dashboard" Subtitle="Your inspections for today and what still needs a report.">
+    <MudButton Href="/OngoingInspections" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow">Start next inspection</MudButton>
+</DashboardHeader>
+
+<div class="qps-kpis">
+    <KpiTile Label="Today's inspections" Value="6" Note="2 before noon" Icon="@Icons.Material.Outlined.Today" Tone="blue" />
+    <KpiTile Label="In progress" Value="1" Note="Shree Balaji Garments" Icon="@Icons.Material.Outlined.PendingActions" Tone="amber" />
+    <KpiTile Label="Reports to submit" Value="3" Note="Oldest: 2 days" Icon="@Icons.Material.Outlined.Description" Tone="pink" />
+    <KpiTile Label="Passed this week" Value="18 / 21" Note="86% pass rate" Icon="@Icons.Material.Outlined.Verified" Tone="green" />
+</div>
+
+<div class="qps-grid-2">
+    <DashCard Title="Today's schedule">
+        <Action><MudLink Href="/InspectionList" Typo="Typo.body2">All inspections</MudLink></Action>
+        <ChildContent>
+            <div class="qps-table-wrap">
+                <table class="qps-table">
+                    <thead><tr><th>Time</th><th>Vendor</th><th>PO</th><th>Category</th><th>Location</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Schedule)
+                        {
+                            <tr><td class="num">@r.Time</td><td>@r.Vendor</td><td class="num">@r.Po</td><td>@r.Category</td><td>@r.Location</td><td><StatusChip Status="@r.Status" /></td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </ChildContent>
+    </DashCard>
+
+    <DashCard Title="Reports waiting for you">
+        <ul class="qps-list">
+            <li><span><b>Kaveri Knitwear</b><br /><small>PO 4500128841 · Kids' T-shirts</small></span><StatusChip Status="Overdue" /></li>
+            <li><span><b>Om Sai Textiles</b><br /><small>PO 4500128790 · Bedsheets</small></span><StatusChip Status="Due today" /></li>
+            <li><span><b>Delta Footwear</b><br /><small>PO 4500128702 · Men's sandals</small></span><StatusChip Status="Due tomorrow" /></li>
+        </ul>
+    </DashCard>
+</div>
+
+@code {
+    private sealed record Row(string Time, string Vendor, string Po, string Category, string Location, string Status);
+
+    private static readonly Row[] Schedule =
+    [
+        new("09:30", "Shree Balaji Garments", "4500129012", "Men's shirts", "Gurugram DC", "In progress"),
+        new("11:00", "Sunrise Home Linen", "4500129044", "Towels", "Gurugram DC", "Scheduled"),
+        new("12:30", "Kaveri Knitwear", "4500129051", "Kids' T-shirts", "Vendor factory, Tiruppur", "Scheduled"),
+        new("14:00", "Om Sai Textiles", "4500129077", "Bedsheets", "Bhiwandi DC", "Scheduled"),
+        new("15:30", "Delta Footwear", "4500129090", "Men's sandals", "Gurugram DC", "Scheduled"),
+        new("17:00", "Metro Denim Co.", "4500129102", "Women's jeans", "Gurugram DC", "Scheduled"),
+    ];
+}

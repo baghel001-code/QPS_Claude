@@ -1,0 +1,26 @@
+@page "/EmployeeDashboard"
+@layout Admin.Components.Layout.DashboardLayout
+@attribute [Authorize(Policy = AppPolicies.Employee)]
+@using Admin.Auth
+@using Admin.Components.Dashboard
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+
+<PageTitle>Dashboard · QPS</PageTitle>
+
+<DashboardHeader Title="Your dashboard" Subtitle="Your QPS account doesn't have a role-specific dashboard yet, so here's an overview.">
+    <MudButton Href="/InspectionList" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FactCheck">Inspection requests</MudButton>
+</DashboardHeader>
+
+<div class="qps-kpis">
+    <KpiTile Label="Open inspection requests" Value="27" Note="Across all DCs" Icon="@Icons.Material.Outlined.FactCheck" Tone="blue" />
+    <KpiTile Label="Inspections this week" Value="64" Note="52 completed" Icon="@Icons.Material.Outlined.EventAvailable" Tone="green" />
+    <KpiTile Label="Shipments due today" Value="12" Note="Gurugram and Bhiwandi" Icon="@Icons.Material.Outlined.LocalShipping" Tone="amber" />
+</div>
+
+<DashCard Title="Need access to more of QPS?">
+    <p class="qps-muted">
+        Menus and dashboards depend on your role (Admin, Buyer, QA, QA manager). If you need one of these,
+        ask your manager to request it from the QPS administrator.
+    </p>
+</DashCard>

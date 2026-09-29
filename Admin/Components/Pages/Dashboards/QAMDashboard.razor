@@ -1,0 +1,72 @@
+@page "/QAMDashboard"
+@layout Admin.Components.Layout.DashboardLayout
+@attribute [Authorize(Policy = AppPolicies.QAM)]
+@using Admin.Auth
+@using Admin.Components.Dashboard
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+
+<PageTitle>QA manager dashboard · QPS</PageTitle>
+
+<DashboardHeader Title="QA manager dashboard" Subtitle="Assign requests, balance inspector workload and watch quality trends.">
+    <MudButton Href="/coming-soon?page=Assign%20inspectors&path=%2FAssignInspections" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AssignmentInd">Assign requests</MudButton>
+</DashboardHeader>
+
+<div class="qps-kpis">
+    <KpiTile Label="Unassigned requests" Value="9" Note="4 due within 48 h" Icon="@Icons.Material.Outlined.Inbox" Tone="pink" />
+    <KpiTile Label="Inspectors on duty" Value="7 / 8" Note="1 on leave" Icon="@Icons.Material.Outlined.Groups" Tone="blue" />
+    <KpiTile Label="Pass rate, 30 days" Value="91%" Note="Up 3 points" Icon="@Icons.Material.Outlined.TrendingUp" Tone="green" />
+    <KpiTile Label="Overdue reports" Value="2" Note="Oldest: 3 days" Icon="@Icons.Material.Outlined.ReportProblem" Tone="red" />
+</div>
+
+<div class="qps-grid-2">
+    <DashCard Title="Requests waiting for an inspector">
+        <Action><MudLink Href="/InspectionList" Typo="Typo.body2">All requests</MudLink></Action>
+        <ChildContent>
+            <div class="qps-table-wrap">
+                <table class="qps-table">
+                    <thead><tr><th>Request</th><th>Vendor</th><th>Category</th><th>Qty</th><th>Needed by</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Waiting)
+                        {
+                            <tr><td class="num">@r.Id</td><td>@r.Vendor</td><td>@r.Category</td><td class="num">@r.Qty</td><td class="num">@r.NeededBy</td><td><StatusChip Status="@r.Status" /></td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </ChildContent>
+    </DashCard>
+
+    <DashCard Title="Inspector workload this week">
+        <ul class="qps-bars">
+            @foreach (var w in Workload)
+            {
+                <li>
+                    <span class="qps-bar-label">@w.Name</span>
+                    <span class="qps-bar-track"><span class="qps-bar-fill" style="width:@(w.Load * 10)%"></span></span>
+                    <span class="qps-bar-value num">@w.Load</span>
+                </li>
+            }
+        </ul>
+        <p class="qps-muted">Inspections booked, out of a planned 10 per inspector.</p>
+    </DashCard>
+</div>
+
+@code {
+    private sealed record Req(string Id, string Vendor, string Category, string Qty, string NeededBy, string Status);
+    private sealed record Load(string Name, int Load);
+
+    private static readonly Req[] Waiting =
+    [
+        new("IR-24811", "Metro Denim Co.", "Women's jeans", "4,800", "01 Oct", "Awaiting assignment"),
+        new("IR-24807", "Kaveri Knitwear", "Kids' T-shirts", "12,000", "01 Oct", "Awaiting assignment"),
+        new("IR-24802", "Sunrise Home Linen", "Towels", "6,500", "02 Oct", "Awaiting assignment"),
+        new("IR-24796", "Delta Footwear", "Men's sandals", "3,200", "03 Oct", "Awaiting assignment"),
+        new("IR-24790", "Om Sai Textiles", "Bedsheets", "9,000", "04 Oct", "Awaiting assignment"),
+    ];
+
+    private static readonly Load[] Workload =
+    [
+        new("Amit S.", 9), new("Priya R.", 8), new("Rahul K.", 7), new("Neha G.", 6), new("Vikas M.", 5), new("Sana A.", 4), new("Rohit P.", 3),
+    ];
+}

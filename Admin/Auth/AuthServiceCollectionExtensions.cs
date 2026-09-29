@@ -31,6 +31,8 @@ public static class AuthServiceCollectionExtensions
         services.AddSingleton<ICaptchaGenerator, VmmCaptchaGenerator>();   // company VmmCaptcha library
         services.AddSingleton<CaptchaService>();
         services.AddSingleton<LandingPageResolver>();
+        services.AddSingleton<Admin.Navigation.AppMenu>();
+        services.AddAuthorization(AppPolicies.Register);   // adds to any AddAuthorization in Program.cs
         services.AddScoped<AccountService>();
         services.AddScoped<PasswordResetService>();
 

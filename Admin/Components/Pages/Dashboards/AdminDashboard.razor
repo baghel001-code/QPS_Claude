@@ -1,0 +1,57 @@
+@page "/AdminDashboard"
+@layout Admin.Components.Layout.DashboardLayout
+@attribute [Authorize(Policy = AppPolicies.Admin)]
+@using Admin.Auth
+@using Admin.Components.Dashboard
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+
+<PageTitle>Admin dashboard · QPS</PageTitle>
+
+<DashboardHeader Title="Admin dashboard" Subtitle="Users, vendors and the health of QPS.">
+    <MudButton Href="/coming-soon?page=Users%20%26%20roles&path=%2FAdmin%2FUsers" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd">Add user</MudButton>
+</DashboardHeader>
+
+<div class="qps-kpis">
+    <KpiTile Label="Active users" Value="186" Note="Employees and vendors" Icon="@Icons.Material.Outlined.People" Tone="blue" />
+    <KpiTile Label="Registered vendors" Value="312" Note="14 added this month" Icon="@Icons.Material.Outlined.Storefront" Tone="green" />
+    <KpiTile Label="Access requests" Value="4" Note="Waiting for approval" Icon="@Icons.Material.Outlined.HowToReg" Tone="pink" />
+    <KpiTile Label="Locked accounts" Value="2" Note="Too many failed sign-ins" Icon="@Icons.Material.Outlined.LockPerson" Tone="red" />
+</div>
+
+<div class="qps-grid-2">
+    <DashCard Title="Recent account changes">
+        <div class="qps-table-wrap">
+            <table class="qps-table">
+                <thead><tr><th>When</th><th>User</th><th>Type</th><th>Change</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var r in Changes)
+                    {
+                        <tr><td class="num">@r.When</td><td>@r.User</td><td>@r.Type</td><td>@r.Change</td><td><StatusChip Status="@r.Status" /></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </DashCard>
+
+    <DashCard Title="System status">
+        <ul class="qps-list">
+            <li><span><b>SAP purchase-order sync</b><br /><small>Last run 10 min ago</small></span><StatusChip Status="Done" /></li>
+            <li><span><b>Daily report e-mails</b><br /><small>Next run 18:00</small></span><StatusChip Status="Scheduled" /></li>
+            <li><span><b>HRP employee login API</b><br /><small>Response 240 ms</small></span><StatusChip Status="Active" /></li>
+        </ul>
+    </DashCard>
+</div>
+
+@code {
+    private sealed record Row(string When, string User, string Type, string Change, string Status);
+
+    private static readonly Row[] Changes =
+    [
+        new("10:12", "Neha Gupta", "Employee", "Role QA → QAM", "Done"),
+        new("09:40", "Metro Denim Co.", "Vendor", "New vendor account", "Awaiting approval"),
+        new("09:05", "Rahul Kumar", "Employee", "Account locked (5 failed sign-ins)", "Locked"),
+        new("Yesterday", "Kaveri Knitwear", "Vendor", "Password reset", "Done"),
+        new("Yesterday", "Sana Ali", "Employee", "Added role Buyer", "Done"),
+    ];
+}

@@ -1,0 +1,30 @@
+@using Admin.Navigation
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@using MudBlazor
+@inject AppMenu Menu
+
+@* Left menu. The items come from AppMenu, filtered by the user's account type and roles. *@
+<AuthorizeView>
+    <Authorized>
+        <nav class="qps-nav" aria-label="Main menu">
+            @foreach (var section in Menu.For(context.User))
+            {
+                <div class="qps-nav-section">@section.Title</div>
+                <MudNavMenu Color="Color.Primary" Class="qps-navmenu">
+                    @foreach (var item in section.Items)
+                    {
+                        <MudNavLink Href="@AppMenu.LinkFor(item)" Icon="@item.Icon"
+                                    Match="@(item.Title == "Dashboard" ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                            @item.Title
+                            @if (!item.Ready)
+                            {
+                                <span class="qps-nav-soon">Soon</span>
+                            }
+                        </MudNavLink>
+                    }
+                </MudNavMenu>
+            }
+        </nav>
+    </Authorized>
+</AuthorizeView>

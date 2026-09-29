@@ -4,8 +4,9 @@ namespace Admin.Auth;
 
 /// <summary>
 /// DEVELOPMENT ONLY. Loses everything on restart and does not work across servers.
-/// Seeds employees admin (Admin role) and qa1 (QA role), and vendor vendor1 (must change password),
-/// all with password ChangeMe!2026, to try the landing pages.
+/// Seeds employees admin (Admin), buyer1 (Buyer), qa1 (QA), qam1 (QAM) and staff1 (no role),
+/// and vendor vendor1 (must change password) / vendor2, all with password ChangeMe!2026,
+/// to try each dashboard and menu.
 /// </summary>
 public sealed class InMemoryAuthUserStore : IAuthUserStore
 {
@@ -20,8 +21,16 @@ public sealed class InMemoryAuthUserStore : IAuthUserStore
         [
             new("E:1", "admin", "admin@example.com", "Administrator", "", NewStamp(),
                 IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Admin"], AccountType.Employee),
-            new("E:2", "qa1", "qa1@example.com", "QA Inspector", "", NewStamp(),
+            new("E:2", "qa1", "qa1@example.com", "Priya Rao", "", NewStamp(),
                 IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["QA"], AccountType.Employee),
+            new("E:3", "qam1", "qam1@example.com", "Neha Gupta", "", NewStamp(),
+                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["QAM"], AccountType.Employee),
+            new("E:4", "buyer1", "buyer1@example.com", "Sana Ali", "", NewStamp(),
+                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Buyer"], AccountType.Employee),
+            new("E:5", "staff1", "staff1@example.com", "Rohit Patel", "", NewStamp(),
+                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: [], AccountType.Employee),
+            new("V:2", "vendor2", "vendor2@example.com", "Kaveri Knitwear", "", NewStamp(),
+                IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Vendor"], AccountType.Vendor),
             new("V:1", "vendor1", "vendor1@example.com", "Sample Vendor Pvt Ltd", "", NewStamp(),
                 IsActive: true, FailedLoginCount: 0, LockoutEndUtc: null, Roles: ["Vendor"], AccountType.Vendor)
             { MustChangePassword = true },

@@ -1,16 +1,15 @@
 @inherits LayoutComponentBase
-@using System.Reflection
 @using Admin.Components.Account
 @using MudBlazor
 
 @* Split screen for the account pages: brand panel with illustration on the left, form card on the right.
    Styles: wwwroot/css/auth.css. Brand colours: the --qps-* variables at the top of that file,
-   and _theme below (keep them the same). *@
+   and QpsTheme.cs (keep them the same). *@
 <HeadContent>
     <link rel="stylesheet" href="css/auth.css" />
 </HeadContent>
 
-<MudThemeProvider Theme="_theme" />
+<MudThemeProvider Theme="QpsTheme.Theme" />
 <MudPopoverProvider />
 
 <div class="qps-auth">
@@ -40,29 +39,7 @@
 
         <footer class="qps-footer">
             <span>Copyright © @DateTime.Now.ToString("yyyy") Vishal Mega Mart</span>
-            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="qps-version">@AppVersion</MudChip>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="qps-version">@AppInfo.Version</MudChip>
         </footer>
     </main>
 </div>
-
-@code {
-    // "App. Ver.1.4.2": the assembly's informational version without the "+<commit>" suffix
-    // the SDK appends. Read once; it can't change while the app runs.
-    private static readonly string AppVersion =
-        "App. Ver." + ((typeof(AuthLayout).Assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "NA")
-            .Split('+')[0]);
-
-    // Same colours as the --qps-* variables in auth.css (taken from the Vishal Mega Mart logo).
-    private readonly MudTheme _theme = new()
-    {
-        PaletteLight = new PaletteLight
-        {
-            Primary = "#d4007c",           // deeper logo pink (white text 5.1:1)
-            Secondary = "#0f6cb1",         // logo blue
-            Tertiary = "#ed018b",          // logo pink
-            AppbarBackground = "#0f6cb1",
-        },
-        LayoutProperties = new LayoutProperties { DefaultBorderRadius = "8px" },
-    };
-}
