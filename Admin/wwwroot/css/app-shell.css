@@ -92,6 +92,9 @@
 .qps-dash-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
 .qps-dash-greeting { font-size: 13px; font-weight: 600; color: var(--qps-blue); margin-bottom: 2px; }
 .qps-dash-title { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; }
+/* Blazor's <FocusOnNavigate Selector="h1"> focuses the page heading after each navigation
+   (so screen readers announce the page). Keep the focus, hide the outline around the heading. */
+.qps-dash-title:focus, .qps-dash-title:focus-visible { outline: none; }
 .qps-dash-sub { margin: 4px 0 0; color: var(--qps-muted); font-size: 14px; max-width: 60ch; }
 .qps-dash-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .qps-proto-badge {

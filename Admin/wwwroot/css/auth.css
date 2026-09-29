@@ -218,6 +218,9 @@
     color: var(--qps-blue); margin-bottom: 6px;
 }
 .qps-title { margin: 0 0 4px; font-size: 26px; font-weight: 700; color: var(--qps-ink); }
+/* Blazor's <FocusOnNavigate Selector="h1"> focuses the page heading after each navigation
+   (so screen readers announce the page). Keep the focus, hide the outline around the heading. */
+.qps-title:focus, .qps-title:focus-visible { outline: none; }
 .qps-sub { margin: 0 0 24px; font-size: 14px; color: var(--qps-muted); }
 
 /* "Keep me signed in" on the left, "Forgot password?" on the right. Own rules instead of
