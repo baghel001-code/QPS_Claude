@@ -24,11 +24,16 @@
 <MudLayout Class="qps-shell">
     <MudAppBar Elevation="0" Dense="false" Class="qps-appbar">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-                       aria-label="Toggle menu" OnClick="() => _drawerOpen = !_drawerOpen" />
-        <a href="/" class="qps-appbar-brand" aria-label="QPS home">
-            <img src="images/vmm-logo.png" alt="Vishal Mega Mart" class="qps-appbar-logo" />
-            <span class="qps-appbar-product">QPS</span>
-        </a>
+                       aria-label="@(_drawerOpen ? "Close menu" : "Open menu")" aria-expanded="@(_drawerOpen ? "true" : "false")"
+                       OnClick="() => _drawerOpen = !_drawerOpen" />
+        @* The logo sits in the drawer header while the drawer is open, and here (right of the menu button) when it's closed. *@
+        @if (!_drawerOpen)
+        {
+            <a href="/" class="qps-appbar-brand" aria-label="QPS home">
+                <img src="images/vmm-logo.png" alt="Vishal Mega Mart" class="qps-appbar-logo" />
+                <span class="qps-appbar-product">QPS</span>
+            </a>
+        }
         <MudSpacer />
 
         <AuthorizeView>
@@ -56,8 +61,14 @@
         </AuthorizeView>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Variant="DrawerVariant.Responsive"
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Never" Variant="DrawerVariant.Responsive"
                Elevation="0" Class="qps-drawer">
+        <MudDrawerHeader Class="qps-drawer-head">
+            <a href="/" class="qps-appbar-brand" aria-label="QPS home">
+                <img src="images/vmm-logo.png" alt="Vishal Mega Mart" class="qps-appbar-logo" />
+                <span class="qps-appbar-product">QPS</span>
+            </a>
+        </MudDrawerHeader>
         <AppNavMenu />
     </MudDrawer>
 

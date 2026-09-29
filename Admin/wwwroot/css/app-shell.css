@@ -48,6 +48,15 @@
 .qps-userchip-sub { font-size: 12px; color: var(--qps-muted); }
 
 /* ---------- left menu ---------- */
+/* Drawer header holds the logo while the drawer is open; same height as the top bar. */
+.qps-drawer-head.mud-drawer-header {
+    position: relative; min-height: 64px; padding: 0 18px; display: flex; align-items: center;
+    border-bottom: 1px solid var(--qps-line);
+}
+.qps-drawer-head::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px;
+    background: linear-gradient(90deg, var(--qps-brand), var(--qps-blue));
+}
 .qps-drawer.mud-drawer { border-inline-end: 1px solid var(--qps-line); }
 .qps-nav { padding: 12px 10px 24px; }
 .qps-nav-section {
