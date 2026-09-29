@@ -18,24 +18,24 @@ public sealed class InMemoryAuthUserStore : IAuthUserStore
         _clock = clock;
         AuthUser[] seed =
         [
-            Employee("E:1", "admin", "Rohit Patel", [QpsRoles.Administrator]) with { Modules = [QpsRoles.ModuleUserManagement, QpsRoles.ModuleMenu] },
-            Employee("E:2", "admin5", "Meera Iyer", [QpsRoles.Admin]),
-            Employee("E:3", "qaadmin", "Neha Gupta", [QpsRoles.QAAdmin]),
-            Employee("E:4", "qam", "Amit Sharma", [QpsRoles.QAM]),
-            Employee("E:5", "qa", "Priya Rao", [QpsRoles.QA]),
-            Employee("E:6", "ch", "Rakesh Verma", [QpsRoles.CategoryHead]),
-            Employee("E:7", "ach", "Pooja Nair", [QpsRoles.AssociateCategoryHead]),
-            Employee("E:8", "merch", "Karan Mehta", [QpsRoles.Merchandiser]),
-            Employee("E:9", "buyer", "Sana Ali", [QpsRoles.Buyer]),
-            Employee("E:10", "qc", "Vivek Singh", [QpsRoles.QC]),
-            Employee("E:11", "view", "Anita Das", [QpsRoles.View]),
-            Employee("E:12", "asn", "Manoj Kumar", [QpsRoles.ASN]),
-            Employee("E:13", "bft", "Deepak Joshi", [QpsRoles.BFT]),
-            Employee("E:14", "cm", "Ritu Malhotra", [QpsRoles.CM]),
-            Employee("E:15", "multi", "Sanjay Rao", [QpsRoles.QAM, QpsRoles.QAAdmin]),
-            Employee("E:16", "staff", "Arjun Menon", []),
-            Vendor("V:1", "vendor1", "Sample Vendor Pvt Ltd") with { MustChangePassword = true },
-            Vendor("V:2", "vendor2", "Kaveri Knitwear"),
+            SeedEmployee("E:1", "admin", "Rohit Patel", [QpsRoles.Administrator]) with { Modules = [QpsRoles.ModuleUserManagement, QpsRoles.ModuleMenu] },
+            SeedEmployee("E:2", "admin5", "Meera Iyer", [QpsRoles.Admin]),
+            SeedEmployee("E:3", "qaadmin", "Neha Gupta", [QpsRoles.QAAdmin]),
+            SeedEmployee("E:4", "qam", "Amit Sharma", [QpsRoles.QAM]),
+            SeedEmployee("E:5", "qa", "Priya Rao", [QpsRoles.QA]),
+            SeedEmployee("E:6", "ch", "Rakesh Verma", [QpsRoles.CategoryHead]),
+            SeedEmployee("E:7", "ach", "Pooja Nair", [QpsRoles.AssociateCategoryHead]),
+            SeedEmployee("E:8", "merch", "Karan Mehta", [QpsRoles.Merchandiser]),
+            SeedEmployee("E:9", "buyer", "Sana Ali", [QpsRoles.Buyer]),
+            SeedEmployee("E:10", "qc", "Vivek Singh", [QpsRoles.QC]),
+            SeedEmployee("E:11", "view", "Anita Das", [QpsRoles.View]),
+            SeedEmployee("E:12", "asn", "Manoj Kumar", [QpsRoles.ASN]),
+            SeedEmployee("E:13", "bft", "Deepak Joshi", [QpsRoles.BFT]),
+            SeedEmployee("E:14", "cm", "Ritu Malhotra", [QpsRoles.CM]),
+            SeedEmployee("E:15", "multi", "Sanjay Rao", [QpsRoles.QAM, QpsRoles.QAAdmin]),
+            SeedEmployee("E:16", "staff", "Arjun Menon", []),
+            SeedVendor("V:1", "vendor1", "Sample Vendor Pvt Ltd") with { MustChangePassword = true },
+            SeedVendor("V:2", "vendor2", "Kaveri Knitwear"),
         ];
         foreach (var user in seed)
             _users[user.Id] = user with { PasswordHash = hasher.HashPassword("ChangeMe!2026") };
@@ -100,11 +100,11 @@ public sealed class InMemoryAuthUserStore : IAuthUserStore
 
     private static string NewStamp() => Guid.NewGuid().ToString("N");
 
-    private static AuthUser Employee(string id, string login, string name, string[] roles) =>
+    private static AuthUser SeedEmployee(string id, string login, string name, string[] roles) =>
         new(id, login, $"{login}@example.com", name, "", NewStamp(), IsActive: true, FailedLoginCount: 0,
             LockoutEndUtc: null, Roles: roles, AccountType.Employee);
 
-    private static AuthUser Vendor(string id, string login, string name) =>
+    private static AuthUser SeedVendor(string id, string login, string name) =>
         new(id, login, $"{login}@example.com", name, "", NewStamp(), IsActive: true, FailedLoginCount: 0,
             LockoutEndUtc: null, Roles: [QpsRoles.Vendor], AccountType.Vendor);
 }
