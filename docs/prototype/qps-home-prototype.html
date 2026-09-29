@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QPS Home Prototype</title>
+<style>
+:root{
+  --brand:#ed018b; --primary:#d4007c; --blue:#0f6cb1; --blue-dark:#0a4a7d;
+  --ink:#1d1a24; --muted:#625c6b; --line:#e8e3ec; --bg:#f6f4f7; --card:#fff;
+  --ok:#1f8a5c; --ok-bg:#e1f4ea; --warn:#9a6200; --warn-bg:#fdf1dc; --bad:#b4233c; --bad-bg:#fbe4e8; --info-bg:#e3f0fa;
+  --pink-bg:#fde6f3;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:14px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+button,select{font:inherit}
+/* ---------- prototype control bar (not part of the app) ---------- */
+.proto{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 16px;background:#211b29;color:#efe9f3;font-size:13px}
+.proto b{color:#fff}
+.proto label{display:flex;align-items:center;gap:6px}
+.proto select{padding:5px 8px;border-radius:6px;border:1px solid #4a4056;background:#2d2537;color:#fff}
+.proto .route{margin-left:auto;font-family:Consolas,ui-monospace,monospace;font-size:12.5px;background:#2d2537;padding:5px 10px;border-radius:6px}
+.proto .route em{color:#ff9ad5;font-style:normal}
+/* ---------- app shell ---------- */
+.app{display:grid;grid-template-columns:264px 1fr;grid-template-rows:64px 1fr;min-height:calc(100vh - 52px)}
+.appbar{grid-column:1/-1;position:relative;display:flex;align-items:center;gap:12px;padding:0 16px;background:#fff;border-bottom:1px solid var(--line)}
+.appbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;background:linear-gradient(90deg,var(--brand),var(--blue))}
+.iconbtn{display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:none;cursor:pointer;color:var(--ink)}
+.iconbtn:hover{background:#f4eef6}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{height:30px;display:block}
+.brand span{padding-left:10px;border-left:1px solid var(--line);font-weight:800;letter-spacing:.08em;color:var(--blue)}
+.spacer{flex:1}
+.userchip{display:flex;align-items:center;gap:10px;padding:4px 10px 4px 4px;border-radius:999px;cursor:default}
+.avatar{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--blue));color:#fff;font-size:13px;font-weight:700}
+.userchip .n{font-weight:600;line-height:1.2}
+.userchip .s{font-size:12px;color:var(--muted);line-height:1.2}
+/* ---------- drawer ---------- */
+.drawer{background:#fff;border-right:1px solid var(--line);padding:12px 10px 20px;overflow-y:auto;display:flex;flex-direction:column}
+.navlink,.navgroup>summary{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:8px;color:var(--ink);text-decoration:none;cursor:pointer;user-select:none}
+.navlink:hover,.navgroup>summary:hover{background:#f7f2f9}
+.navlink.active{background:var(--pink-bg);color:var(--primary);font-weight:600}
+.navlink svg,.navgroup>summary svg{width:20px;height:20px;fill:currentColor;flex:none;opacity:.85}
+.navgroup{margin:1px 0}
+.navgroup>summary{list-style:none;font-weight:600}
+.navgroup>summary::-webkit-details-marker{display:none}
+.navgroup>summary .chev{margin-left:auto;transition:transform .15s}
+.navgroup[open]>summary .chev{transform:rotate(180deg)}
+.navgroup .items{padding-left:32px}
+.navgroup .items .navlink{padding:7px 12px;font-size:13.5px}
+.navgroup .navgroup .items{padding-left:14px}
+.navsection{margin:16px 12px 4px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.drawer .foot{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+/* ---------- page ---------- */
+main{padding:26px 28px 32px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.greet{font-size:13px;font-weight:600;color:var(--blue)}
+h1{margin:2px 0 0;font-size:26px;line-height:1.2}
+.sub{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.badge{padding:4px 10px;border-radius:999px;border:1px dashed #d8b4ca;background:#fff;color:var(--primary);font-size:12px;font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;border:1px solid transparent;font-weight:600;font-size:13.5px;cursor:pointer}
+.btn svg{width:18px;height:18px;fill:currentColor}
+.btn.p{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(212,0,124,.25)}
+.btn.o{background:#fff;border-color:#b9d3ea;color:var(--blue)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.kpi{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;background:#fff;border:1px solid var(--line);border-radius:12px}
+.kpi .ic{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;flex:none}
+.kpi .ic svg{width:22px;height:22px;fill:currentColor}
+.kpi .l{font-size:13px;color:var(--muted)}
+.kpi .v{font-size:28px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .nt{font-size:12px;color:var(--muted)}
+.t-pink .ic{background:var(--pink-bg);color:var(--primary)} .t-blue .ic{background:var(--info-bg);color:var(--blue)}
+.t-green .ic{background:var(--ok-bg);color:var(--ok)} .t-amber .ic{background:var(--warn-bg);color:var(--warn)} .t-red .ic{background:var(--bad-bg);color:var(--bad)}
+.grid2{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:14px;align-items:start}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.panel>header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.panel h2{margin:0;font-size:15px}
+.panel .lnk{color:var(--primary);font-size:13px;text-decoration:none;cursor:pointer}
+.panel .body{padding:6px 18px 14px}
+.tw{overflow-x:auto;margin:0 -18px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 18px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 18px;border-bottom:1px solid #f1edf3;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fbf8fc}
+.num{font-variant-numeric:tabular-nums}
+.st{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.st.ok{background:var(--ok-bg);color:var(--ok)} .st.bad{background:var(--bad-bg);color:var(--bad)} .st.info{background:var(--info-bg);color:var(--blue)} .st.wait{background:var(--warn-bg);color:var(--warn)}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f1edf3}
+.list li:last-child{border-bottom:0}
+.list small{color:var(--muted)}
+.bars{list-style:none;margin:8px 0 6px;padding:0;display:grid;gap:9px}
+.bars li{display:grid;grid-template-columns:110px 1fr 44px;gap:10px;align-items:center;font-size:13px}
+.track{height:10px;border-radius:5px;background:#eef2f7;overflow:hidden;position:relative}
+.fill{display:block;height:100%;border-radius:0 4px 4px 0;background:var(--blue)}
+.bars .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+.hint{margin:6px 0 0;color:var(--muted);font-size:12.5px}
+.placeholder{background:#fff;border:1px dashed #cdbfd6;border-radius:12px;padding:40px 24px;text-align:center;color:var(--muted)}
+.placeholder code{background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--ink)}
+.appfoot{display:flex;justify-content:center;gap:12px;padding:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.appfoot span:last-child{color:var(--blue)}
+.tip{position:fixed;pointer-events:none;background:#211b29;color:#fff;font-size:12px;padding:5px 8px;border-radius:6px;opacity:0;transition:opacity .1s;z-index:60}
+@media (max-width:960px){
+  .app{grid-template-columns:1fr}
+  .drawer{position:fixed;top:0;bottom:0;left:0;width:264px;z-index:60;transform:translateX(-100%);transition:transform .2s;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+  .app.open .drawer{transform:none}
+  .grid2{grid-template-columns:1fr}
+  main{padding:18px 16px 24px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi{flex-direction:column;gap:8px;padding:14px}
+  .kpi .v{font-size:24px}
+  .userchip .txt{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="proto" role="region" aria-label="Prototype controls">
+  <b>QPS home page · design prototype</b>
+  <label for="persona">Signed in as
+    <select id="persona"></select>
+  </label>
+  <label><input type="checkbox" id="modUm"> User Management module</label>
+  <label><input type="checkbox" id="modMenu"> Menu module</label>
+  <span class="route" id="route"></span>
+</div>
+
+<div class="app" id="app">
+  <header class="appbar">
+    <button class="iconbtn" id="toggle" aria-label="Toggle menu"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
+    <div class="brand"><img alt="Vishal Mega Mart" src="data:image/png;base64,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"><span>QPS</span></div>
+    <div class="spacer"></div>
+    <div class="userchip"><span class="avatar" id="avatar"></span><span class="txt"><div class="n" id="uname"></div><div class="s" id="urole"></div></span></div>
+  </header>
+  <nav class="drawer" id="drawer" aria-label="Main menu"></nav>
+  <div style="display:flex;flex-direction:column;min-width:0">
+    <main id="main"></main>
+    <footer class="appfoot"><span>Copyright © 2026 Vishal Mega Mart</span><span>App. Ver.2.0.4</span></footer>
+  </div>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+// ---------- icons (Material, 24px) ----------
+const P={
+ home:'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
+ insp:'M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z',
+ truck:'M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9 1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z',
+ audit:'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM9 18l-3-3 1.41-1.41L9 15.17l5.59-5.59L16 11l-7 7z',
+ shirt:'M16 4l-4 2-4-2-6 3 2 5 2-1v9h12v-9l2 1 2-5z',
+ store:'M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z',
+ tune:'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
+ gear:'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87a.47.47 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 0 0-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+ menu:'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z',
+ logout:'M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z',
+ chev:'M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z',
+ inbox:'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 12h-4c0 1.66-1.35 3-3 3s-3-1.34-3-3H5V5h14v10z',
+ play:'M8 5v14l11-7z',
+ clock:'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z',
+ doc:'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
+ check:'M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z',
+ alert:'M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z',
+ users:'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z',
+ cal:'M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z',
+ trend:'M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z',
+ lock:'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z',
+ eye:'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z',
+ add:'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
+ dl:'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z'
+};
+const svg=n=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${P[n]||P.doc}"/></svg>`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- personas (role IDs exactly as in NavMenu.razor) ----------
+const PERSONAS=[
+ {id:'qaadmin',name:'Neha Gupta',roles:['1008'],label:'QA Admin · 1008'},
+ {id:'qam',name:'Amit Sharma',roles:['1007'],label:'QAM · 1007'},
+ {id:'qa',name:'Priya Rao',roles:['1006'],label:'QA · 1006'},
+ {id:'merch',name:'Karan Mehta',roles:['1012'],label:'Merchandiser · 1012'},
+ {id:'buyer',name:'Sana Ali',roles:['2'],label:'Buyer · 2'},
+ {id:'ch',name:'Rakesh Verma',roles:['1010'],label:'CH · 1010'},
+ {id:'ach',name:'Pooja Nair',roles:['1011'],label:'ACH · 1011'},
+ {id:'qc',name:'Vivek Singh',roles:['3'],label:'QC · 3'},
+ {id:'view',name:'Anita Das',roles:['4'],label:'View · 4'},
+ {id:'asn',name:'Manoj Kumar',roles:['1014'],label:'ASN · 1014'},
+ {id:'bft',name:'Deepak Joshi',roles:['1013'],label:'BFT · 1013'},
+ {id:'cm',name:'Ritu Malhotra',roles:['1009'],label:'CM · 1009'},
+ {id:'admin',name:'Rohit Patel',roles:['1'],label:'Admin · 1',um:true},
+ {id:'multi',name:'Sanjay Rao',roles:['1007','1008'],label:'QAM + QA Admin (multi-role)'},
+ {id:'vendor',name:'Kaveri Knitwear',roles:['Vendor'],label:'Vendor',vendor:true},
+];
+
+// Which dashboard "/" shows when a user has several roles: first match wins.
+const PRIORITY=['1008','1','1007','1006','1010','1011','1012','2','3','1014','1013','1009','4'];
+const COMPONENT={Vendor:'VendorDashboard','1008':'QaAdminDashboard','1':'AdminDashboard','1007':'QamDashboard','1006':'QaDashboard','1010':'CategoryHeadDashboard','1011':'CategoryHeadDashboard','1012':'MerchandiserDashboard','2':'BuyerDashboard','3':'QcDashboard','1014':'AsnDashboard','1013':'BftDashboard','1009':'CmDashboard','4':'ViewDashboard',none:'EmployeeDashboard'};
+function primaryRole(roles){ if(roles.includes('Vendor')) return 'Vendor'; return PRIORITY.find(r=>roles.includes(r))||'none'; }
+
+// ---------- menu: same rules as NavMenu.razor ----------
+const L=(t,h)=>({t,h});
+function buildMenu(roles,mod){
+  const is=r=>roles.includes(r);
+  const isAdmin=is('1'),isBuyer=is('2'),isQC=is('3'),isView=is('4'),isQA=is('1006'),isQAM=is('1007'),isQAAdmin=is('1008'),
+        isCH=is('1010'),isACH=is('1011'),isMerch=is('1012'),isASN=is('1014'),isVendor=is('Vendor');
+  const groups=[];
+  const add=(title,icon,items)=>{ // merge groups with the same title, drop duplicate links
+    let g=groups.find(x=>x.title===title);
+    if(!g){g={title,icon,items:[]};groups.push(g);}
+    for(const it of items) if(!g.items.some(x=>x.h&&x.h===it.h&&!x.items)) g.items.push(it);
+  };
+  const std=[L('All','/AllRecPenOngInspections'),L('Submitted','/InspectionList'),L('Pending','/PendingInspectionListNew'),L('Report','/InspectionsReportNew'),L('Cancelled','/CanceledInspections'),L('ASN Generated','/AsnGenList')];
+  if(isQAM||isQAAdmin||isMerch||isQA||isVendor||isACH||isCH||isBuyer){
+    const it=[];
+    if(isQAM||isQAAdmin||isMerch) it.push(L('All','/AllRecPenOngInspections'),L('Received','/InspectionList'),L('Ongoing','/OngoingInspections'),L('Pending','/PendingInspectionListNew'),L('Report','/InspectionsReportNew'),L('Cancelled','/CanceledInspections'),{t:'ASN',items:[L('ASN Generated','/AsnGenList')]});
+    if(isQAAdmin) it.push(L('Bulk Download','/bulk-download'));
+    if(isQA) it.push(L('Ongoing','/OngoingInspections'),L('Pending','/PendingInspectionListNew'),L('Report','/InspectionsReportNew'),L('Failed','/FailedInspections'));
+    if(isVendor) it.push(...std);
+    if(isACH||isCH||isBuyer) it.push(...std);
+    add('Inspection Requests','insp',it);
+  }
+  if(isASN) add('ASN','truck',[L('ASN Request','/AsnReqList'),L('ASN Generated','/AsnGenList')]);
+  if(isQAAdmin) add('Audit Requests','audit',[L('New Vendor(s)','/NewAuditRequests'),L('Old Vendor(s)','/OldAuditRequests')]);
+  if(isQAAdmin||isAdmin||isBuyer||isQC||isView||isMerch) add('PPS','shirt',[L('PPS Requests','/pps-list')]);
+  if(isQAM||isQAAdmin) add('Vendor Management','store',[L('Vendor Onboard','/VendorOnBoarding'),L('Reset Password','/resetpassword')]);
+  if(isQAAdmin) add('Master Data','tune',[L('Email Management','/emailList'),L('Color Codes','/colorCodeList'),L('QA Location','/QAMaster'),L('Hierarchy','/HierarchyList')]);
+  if(mod.um){
+    add('Settings','gear',[L('User Management','/User-Master'),L('User Roles','/Role-Master'),L('Vendor Management','/Vendor-Master'),L('Reset Password','/resetpassword')]);
+    add('Audit Requests','audit',[L('New Vendor(s)','/NewAuditRequests'),L('Old Vendor(s)','/OldAuditRequests'),L('Audit Wizard','/audit/new'),L('Bulk Download','/bulk-download')]);
+  }
+  if(mod.menu) add('Menu','menu',[L('Edit','/Menu-Master'),L('Quality manual','/Menu-Master?page=12'),{t:'SOPs',items:[L('Inspection SOP','/Menu-Master?page=21'),L('Packing SOP','/Menu-Master?page=22')]}]);
+  return groups;
+}
+
+// ---------- dashboards (sample data) ----------
+const V=['Shree Balaji Garments','Kaveri Knitwear','Om Sai Textiles','Sunrise Home Linen','Delta Footwear','Metro Denim Co.'];
+const pipeline=(rec,ong,pen,rep,can)=>({type:'bars',title:'Inspection requests by status',hint:'This month, all DCs. Counts, not percentages.',data:[['Received',rec],['Ongoing',ong],['Pending',pen],['Report',rep],['Cancelled',can]]});
+const DASH={
+ QaAdminDashboard:{title:'QA admin dashboard',sub:'The whole inspection pipeline, vendor audits and master data at a glance.',
+   actions:[['p','dl','Bulk download'],['o','audit','New vendor audits']],
+   kpis:[['Inspection requests, this month','486','34 more than last month','blue','insp'],['Pass rate, 30 days','91%','Up 3 points','green','trend'],['Vendor audits waiting','12','8 new · 4 existing','pink','audit'],['Cancelled this month','9','2 by vendors','red','alert']],
+   main:{title:'Vendor audit requests',link:'/NewAuditRequests',cols:['Request','Vendor','Type','Raised','Status'],rows:[['AR-1182',V[5],'New vendor','26 Sep','Awaiting review'],['AR-1179','Nova Kids Wear','New vendor','25 Sep','Awaiting review'],['AR-1174',V[2],'Re-audit','24 Sep','In progress'],['AR-1170',V[4],'Re-audit','22 Sep','Approved'],['AR-1166','Prime Leather Goods','New vendor','20 Sep','Rejected']]},
+   side:pipeline(142,61,38,229,16)},
+ QamDashboard:{title:'QA manager dashboard',sub:'Received requests to assign, inspector workload and pending reports.',
+   actions:[['p','insp','Assign received requests']],
+   kpis:[['Received, not assigned','9','4 needed within 48 h','pink','inbox'],['Ongoing inspections','14','Across 3 DCs','blue','play'],['Pending reports','6','Oldest: 3 days','amber','clock'],['Pass rate, 30 days','91%','Up 3 points','green','trend']],
+   main:{title:'Received requests waiting for an inspector',link:'/InspectionList',cols:['Request','Vendor','Category','Qty','Needed by','Status'],rows:[['IR-24811',V[5],"Women's jeans",'4,800','01 Oct','Received'],['IR-24807',V[1],"Kids' T-shirts",'12,000','01 Oct','Received'],['IR-24802',V[3],'Towels','6,500','02 Oct','Received'],['IR-24796',V[4],"Men's sandals",'3,200','03 Oct','Received'],['IR-24790',V[2],'Bedsheets','9,000','04 Oct','Received']]},
+   side:{type:'bars',title:'Inspector workload this week',hint:'Inspections booked per inspector (plan: 10).',max:10,data:[['Priya R.',9],['Vikas M.',8],['Rahul K.',7],['Neha S.',6],['Sana A.',4],['Rohit P.',3]]}},
+ QaDashboard:{title:'QA dashboard',sub:'Your inspections today and the reports still to submit.',
+   actions:[['p','play','Open ongoing inspections']],
+   kpis:[["Today's inspections",'6','2 before noon','blue','cal'],['Ongoing','1',V[0],'amber','play'],['Pending reports','3','Oldest: 2 days','pink','doc'],['Failed this week','2','Of 21 inspected','red','alert']],
+   main:{title:"Today's schedule",link:'/OngoingInspections',cols:['Time','Vendor','PO','Category','Location','Status'],rows:[['09:30',V[0],'4500129012',"Men's shirts",'Gurugram DC','Ongoing'],['11:00',V[3],'4500129044','Towels','Gurugram DC','Scheduled'],['12:30',V[1],'4500129051',"Kids' T-shirts",'Tiruppur factory','Scheduled'],['14:00',V[2],'4500129077','Bedsheets','Bhiwandi DC','Scheduled'],['15:30',V[4],'4500129090',"Men's sandals",'Gurugram DC','Scheduled']]},
+   side:{type:'list',title:'Reports waiting for you',link:'/PendingInspectionListNew',data:[[V[1],'PO 4500128841 · Kids\' T-shirts','Overdue'],[V[2],'PO 4500128790 · Bedsheets','Due today'],[V[4],'PO 4500128702 · Men\'s sandals','Due tomorrow']]}},
+ MerchandiserDashboard:{title:'Merchandiser dashboard',sub:'Inspections and samples for the styles you handle.',
+   actions:[['p','insp','All inspection requests'],['o','shirt','PPS requests']],
+   kpis:[['My open inspection requests','23','5 received today','blue','insp'],['PPS waiting for decision','4','1 over 3 days','pink','shirt'],['Failed, 30 days','3','Re-inspections booked','red','alert'],['ASNs generated','11','This week','green','truck']],
+   main:{title:'Inspections for your styles',link:'/AllRecPenOngInspections',cols:['Style','Vendor','PO','Inspection','Status'],rows:[['MS-24-1182',V[0],'4500129012','30 Sep','Ongoing'],['WJ-24-0417',V[5],'4500129102','30 Sep','Received'],['KT-24-0931',V[1],'4500129051','01 Oct','Pending'],['BS-24-0288',V[2],'4500128790','27 Sep','Passed'],['GD-24-0112','Nova Kids Wear','4500128702','24 Sep','Failed']]},
+   side:pipeline(18,6,5,41,2)},
+ BuyerDashboard:{title:'Buyer dashboard',sub:'Pre-production samples to approve, inspections on your POs and ASNs.',
+   actions:[['p','shirt','Review PPS requests']],
+   kpis:[['PPS awaiting approval','5','2 over 3 days','pink','shirt'],['Inspections submitted','17','This month','blue','insp'],['Pending inspections','6','Next: 01 Oct','amber','clock'],['ASNs generated','8','3 arriving today','green','truck']],
+   main:{title:'PPS requests to approve',link:'/pps-list',cols:['Style','Vendor','Category','Submitted','Status'],rows:[['MS-24-1182',V[0],"Men's shirts",'25 Sep','Awaiting approval'],['KT-24-0931',V[1],"Kids' T-shirts",'26 Sep','Awaiting approval'],['WJ-24-0417',V[5],"Women's jeans",'27 Sep','Awaiting approval'],['BS-24-0288',V[2],'Bedsheets','27 Sep','Rework requested'],['TW-24-0102',V[3],'Towels','28 Sep','Awaiting approval']]},
+   side:{type:'list',title:'ASNs generated',link:'/AsnGenList',data:[['ASN 7700451',V[0]+' · 18 cartons · Gurugram DC','In transit'],['ASN 7700448',V[2]+' · 40 cartons · Bhiwandi DC','In transit'],['ASN 7700440',V[3]+' · 22 cartons','Delivered']]}},
+ CategoryHeadDashboard:{title:'Category dashboard',sub:'Quality across your category: pass rates, failures and cancellations.',
+   actions:[['p','doc','Inspection reports']],
+   kpis:[['Inspections, 30 days','212','Your category','blue','insp'],['Pass rate, 30 days','88%','Target 90%','amber','trend'],['Failed inspections','14','6 vendors','red','alert'],['Cancelled','5','3 by vendors','pink','inbox']],
+   main:{title:'Failed and cancelled inspections',link:'/InspectionsReportNew',cols:['Request','Vendor','Category','Date','Status'],rows:[['IR-24612','Nova Kids Wear',"Girls' dresses",'18 Sep','Failed'],['IR-24598',V[4],"Men's sandals",'17 Sep','Failed'],['IR-24577',V[5],"Women's jeans",'15 Sep','Cancelled'],['IR-24561',V[1],"Kids' shorts",'14 Sep','Failed']]},
+   side:{type:'bars',title:'Pass rate by sub-category',hint:'Last 30 days, % of inspections passed.',max:100,suffix:'%',data:[["Men's shirts",94],['Bedsheets',92],["Kids' T-shirts",89],["Women's jeans",84],["Men's sandals",79]]}},
+ QcDashboard:{title:'QC dashboard',sub:'Pre-production samples waiting for your quality check.',
+   actions:[['p','shirt','Open PPS requests']],
+   kpis:[['PPS to check','7','3 received today','pink','shirt'],['Checked this week','19','16 approved','green','check'],['Sent back for rework','3','This week','amber','alert']],
+   main:{title:'PPS requests to check',link:'/pps-list',cols:['Style','Vendor','Category','Received','Status'],rows:[['TW-24-0102',V[3],'Towels','28 Sep','Awaiting check'],['WJ-24-0417',V[5],"Women's jeans",'27 Sep','Awaiting check'],['KT-24-0931',V[1],"Kids' T-shirts",'26 Sep','In progress'],['MS-24-1182',V[0],"Men's shirts",'25 Sep','Approved']]},
+   side:{type:'list',title:'Recently checked',data:[['BS-24-0288',V[2]+' · Bedsheets','Rework requested'],['SH-24-0501','Prime Leather Goods · Belts','Approved'],['KS-24-0212',V[1]+" · Kids' shorts",'Approved']]}},
+ ViewDashboard:{title:'Overview',sub:'Read-only view of PPS requests and inspection results.',badge:'Read-only access',
+   actions:[['o','eye','View PPS requests']],
+   kpis:[['PPS requests, this month','58','41 approved','blue','shirt'],['Inspections, this month','486','91% passed','green','insp'],['Open PPS','9','Awaiting decision','amber','clock']],
+   main:{title:'Latest PPS requests',link:'/pps-list',cols:['Style','Vendor','Category','Submitted','Status'],rows:[['TW-24-0102',V[3],'Towels','28 Sep','Awaiting approval'],['WJ-24-0417',V[5],"Women's jeans",'27 Sep','Awaiting approval'],['BS-24-0288',V[2],'Bedsheets','27 Sep','Rework requested'],['SH-24-0501','Prime Leather Goods','Belts','24 Sep','Approved']]},
+   side:pipeline(142,61,38,229,16)},
+ AsnDashboard:{title:'ASN dashboard',sub:'ASN requests to process and ASNs generated today.',
+   actions:[['p','truck','Open ASN requests']],
+   kpis:[['ASN requests waiting','11','4 received today','pink','inbox'],['Generated today','7','132 cartons','green','truck'],['Awaiting DC slot','3','Gurugram DC','amber','clock']],
+   main:{title:'ASN requests',link:'/AsnReqList',cols:['Request','Vendor','PO','Cartons','Requested','Status'],rows:[['AR-5521',V[1],'4500129051','64','30 Sep','Awaiting generation'],['AR-5519',V[0],'4500129012','18','30 Sep','Awaiting generation'],['AR-5514',V[2],'4500128790','40','29 Sep','In progress'],['AR-5509',V[3],'4500129044','22','29 Sep','Generated']]},
+   side:{type:'bars',title:'ASNs generated by DC, this week',hint:'Count of ASNs.',data:[['Gurugram DC',24],['Bhiwandi DC',17],['Kolkata DC',9],['Hyderabad DC',6]]}},
+ BftDashboard:{title:'BFT dashboard',sub:'BFT ASN requests and their status.',note:'BFT (1013) has no menu items in the current NavMenu. Decide which pages it should see.',
+   actions:[['p','truck','BFT ASN requests']],
+   kpis:[['BFT ASN requests','6','2 received today','pink','inbox'],['Approved this week','14','','green','check'],['Waiting for vendor','2','','amber','clock']],
+   main:{title:'BFT ASN requests',cols:['Request','Vendor','PO','Requested','Status'],rows:[['BR-311',V[4],'4500129090','30 Sep','Awaiting review'],['BR-309',V[5],'4500129102','29 Sep','Awaiting review'],['BR-305',V[0],'4500129012','28 Sep','Approved']]},
+   side:{type:'list',title:'Needs attention',data:[['BR-298',V[2]+' · missing packing list','Pending'],['BR-294',V[1]+' · carton count mismatch','Pending']]}},
+ CmDashboard:{title:'Dashboard',sub:'An overview while your role’s pages are set up.',note:'CM (1009) has no menu items in the current NavMenu. Decide which pages it should see.',
+   actions:[],
+   kpis:[['Inspection requests, this month','486','All DCs','blue','insp'],['Pass rate, 30 days','91%','','green','trend'],['ASNs generated, this week','56','','amber','truck']],
+   main:{title:'Latest inspection results',cols:['Request','Vendor','Category','Date','Status'],rows:[['IR-24690',V[1],"Kids' T-shirts",'24 Sep','Passed'],['IR-24661',V[2],'Bedsheets','22 Sep','Passed'],['IR-24612','Nova Kids Wear',"Girls' dresses",'18 Sep','Failed']]},
+   side:{type:'list',title:'Need more access?',data:[['Ask your manager','to request a role from the QPS administrator','']]}},
+ AdminDashboard:{title:'Admin dashboard',sub:'Users, roles and system health.',
+   actions:[['p','users','User management'],['o','gear','User roles']],
+   kpis:[['Active users','186','Employees and vendors','blue','users'],['Registered vendors','312','14 added this month','green','store'],['Access requests','4','Waiting for approval','pink','inbox'],['Locked accounts','2','Too many failed sign-ins','red','lock']],
+   main:{title:'Recent account changes',link:'/User-Master',cols:['When','User','Type','Change','Status'],rows:[['10:12','Neha Gupta','Employee','Role 1006 → 1007','Done'],['09:40',V[5],'Vendor','New vendor account','Awaiting approval'],['09:05','Rahul Kumar','Employee','Locked after 5 failed sign-ins','Locked'],['Yesterday',V[1],'Vendor','Password reset','Done']]},
+   side:{type:'list',title:'System status',data:[['SAP PO sync','Last run 10 min ago','Done'],['Daily report e-mails','Next run 18:00','Scheduled'],['HRP employee login API','Response 240 ms','Active']]}},
+ VendorDashboard:{title:'Vendor dashboard',sub:'Your inspection requests, their status and ASNs.',
+   actions:[['p','add','Raise inspection request'],['o','truck','ASN generated']],
+   kpis:[['Submitted, waiting','3','1 received today','blue','insp'],['Pending inspection','2','Next: 01 Oct, 11:00','amber','cal'],['Reports available','4','This month','green','doc'],['Failed, 30 days','1','Re-inspection booked','red','alert']],
+   main:{title:'Your inspection requests',link:'/AllRecPenOngInspections',cols:['Request','PO','Category','Date','Status'],rows:[['IR-24807','4500129051',"Kids' T-shirts",'01 Oct','Pending'],['IR-24751','4500128930',"Kids' shorts",'03 Oct','Submitted'],['IR-24690','4500128841',"Kids' T-shirts",'24 Sep','Passed'],['IR-24612','4500128702',"Girls' dresses",'18 Sep','Failed'],['IR-24588','4500128655','Kids\' nightwear','12 Sep','Cancelled']]},
+   side:{type:'list',title:'Before your next inspection',data:[['Keep 10% of cartons open','For the random sample on PO 4500129051',''],['Upload the packing list','At least one day before','Pending'],['Share the site contact','Name and phone','Done']]}},
+ EmployeeDashboard:{title:'Your dashboard',sub:'Your account has no QPS role yet.',
+   actions:[],kpis:[['Inspection requests, this month','486','All DCs','blue','insp'],['Pass rate, 30 days','91%','','green','trend']],
+   main:{title:'What you can do',cols:['Step','Details'],rows:[['1','Ask your manager to request a QPS role'],['2','The QPS administrator assigns it in User Management']]},
+   side:{type:'list',title:'Need help?',data:[['QPS support team','For sign-in or access problems','']]}},
+};
+
+// ---------- rendering ----------
+const stClass=s=>{s=s.toLowerCase();return /pass|approv|deliver|active|done|generated/.test(s)?'ok':/fail|reject|overdue|locked|cancel/.test(s)?'bad':/progress|transit|ongoing|received/.test(s)?'info':'wait'};
+const chip=s=>s?`<span class="st ${stClass(s)}">${esc(s)}</span>`:'';
+function renderSide(s){
+  if(s.type==='bars'){
+    const max=s.max||Math.max(...s.data.map(d=>d[1]));
+    return `<ul class="bars">${s.data.map(([k,v])=>`<li data-tip="${esc(k)}: ${v}${s.suffix||''}"><span>${esc(k)}</span><span class="track"><span class="fill" style="width:${(v/max*100).toFixed(1)}%"></span></span><span class="v">${v}${s.suffix||''}</span></li>`).join('')}</ul>${s.hint?`<p class="hint">${esc(s.hint)}</p>`:''}`;
+  }
+  return `<ul class="list">${s.data.map(([a,b,c])=>`<li><span><b>${esc(a)}</b><br><small>${esc(b)}</small></span>${chip(c)}</li>`).join('')}</ul>`;
+}
+function renderDashboard(comp,user){
+  const d=DASH[comp];
+  const first=user.name.split(' ')[0];
+  const h=new Date().getHours(), greet=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  const statusCol=d.main.cols.length-1;
+  return `
+  <div class="head">
+    <div><div class="greet">${greet}, ${esc(first)}</div><h1>${esc(d.title)}</h1><p class="sub">${esc(d.sub)}</p></div>
+    <div class="actions">${d.badge?`<span class="badge" style="color:var(--blue);border-color:#b9d3ea">${esc(d.badge)}</span>`:''}<span class="badge" title="Figures are examples, not live data">Prototype · sample data</span>${d.actions.map(([k,i,t])=>`<button class="btn ${k}">${svg(i)}${esc(t)}</button>`).join('')}</div>
+  </div>
+  ${d.note?`<div class="placeholder" style="padding:12px 16px;text-align:left;border-color:#e3c38a;background:#fffaf0;color:#7a5200">${esc(d.note)}</div>`:''}
+  <div class="kpis">${d.kpis.map(([l,v,n,t,i])=>`<div class="kpi t-${t}"><div class="ic">${svg(i)}</div><div><div class="l">${esc(l)}</div><div class="v">${esc(v)}</div>${n?`<div class="nt">${esc(n)}</div>`:''}</div></div>`).join('')}</div>
+  <div class="grid2">
+    <section class="panel"><header><h2>${esc(d.main.title)}</h2>${d.main.link?`<a class="lnk" data-href="${d.main.link}">View all</a>`:''}</header>
+      <div class="body"><div class="tw"><table><thead><tr>${d.main.cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead>
+      <tbody>${d.main.rows.map(r=>`<tr>${r.map((c,i)=>i===statusCol&&d.main.cols[i]==='Status'?`<td>${chip(c)}</td>`:`<td class="${/^\d|^[A-Z]{2}-/.test(c)?'num':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div></section>
+    <section class="panel"><header><h2>${esc(d.side.title)}</h2>${d.side.link?`<a class="lnk" data-href="${d.side.link}">View all</a>`:''}</header><div class="body">${renderSide(d.side)}</div></section>
+  </div>`;
+}
+function renderMenu(groups,active){
+  const link=(it)=>`<a class="navlink${it.h===active?' active':''}" data-href="${it.h}">${esc(it.t)}</a>`;
+  const item=it=>it.items?`<details class="navgroup" open><summary>${esc(it.t)}${svg('chev').replace('<svg','<svg class="chev"')}</summary><div class="items">${it.items.map(item).join('')}</div></details>`:link(it);
+  return `<a class="navlink${active==='/'?' active':''}" data-href="/">${svg('home')}Home</a>
+    ${groups.map(g=>`<details class="navgroup" ${g.items.some(i=>i.h===active||i.items?.some(x=>x.h===active))||groups.length<=3?'open':''}><summary>${svg(g.icon)}${esc(g.title)}${svg('chev').replace('<svg','<svg class="chev"')}</summary><div class="items">${g.items.map(item).join('')}</div></details>`).join('')}
+    <div class="foot"><a class="navlink" data-href="#logout">${svg('logout')}Sign out</a></div>`;
+}
+
+let state={persona:PERSONAS[0],path:'/'};
+const $=id=>document.getElementById(id);
+function render(){
+  const p=state.persona, mod={um:$('modUm').checked,menu:$('modMenu').checked};
+  const prim=primaryRole(p.roles), comp=COMPONENT[prim];
+  $('uname').textContent=p.name;
+  $('urole').textContent=p.vendor?'Vendor':p.label.replace(/ · /,' (')+(p.label.includes(' · ')?')':'');
+  $('avatar').textContent=p.name.split(' ').slice(0,2).map(s=>s[0]).join('').toUpperCase();
+  $('drawer').innerHTML=renderMenu(buildMenu(p.roles,mod),state.path);
+  if(state.path==='/'){
+    $('main').innerHTML=renderDashboard(comp,p);
+    $('route').innerHTML=`Route <em>/</em> → Home.razor renders <em>&lt;${comp} /&gt;</em>${prim!=='Vendor'&&prim!=='none'?` · primary role ${prim}`:''}`;
+  }else{
+    $('main').innerHTML=`<div class="placeholder"><h1 style="color:var(--ink)">Existing QPS page</h1><p>This menu item opens <code>${esc(state.path)}</code>, one of your current pages. It isn't part of this prototype.</p><p><button class="btn p" data-href="/">${svg('home')}Back to Home</button></p></div>`;
+    $('route').innerHTML=`Route <em>${esc(state.path)}</em> → existing page`;
+  }
+}
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-href]'); if(!a) return;
+  e.preventDefault();
+  const h=a.dataset.href;
+  if(h==='#logout'){ $('main').innerHTML=`<div class="placeholder"><h1 style="color:var(--ink)">Sign out</h1><p>Posts the sign-out form and returns to <code>/Account/Login?reason=signedout</code>.</p><p><button class="btn p" data-href="/">${svg('home')}Back to Home</button></p></div>`; return; }
+  state.path=h; render(); $('app').classList.remove('open');
+});
+$('toggle').addEventListener('click',()=>$('app').classList.toggle('open'));
+const sel=$('persona');
+sel.innerHTML=PERSONAS.map(p=>`<option value="${p.id}">${esc(p.name)} — ${esc(p.label)}</option>`).join('');
+sel.addEventListener('change',()=>{state.persona=PERSONAS.find(p=>p.id===sel.value);state.path='/';$('modUm').checked=!!state.persona.um;render();});
+['modUm','modMenu'].forEach(id=>$(id).addEventListener('change',render));
+// tooltips on bars
+const tip=$('tip');
+document.addEventListener('mousemove',e=>{const t=e.target.closest('[data-tip]');if(!t){tip.style.opacity=0;return;}tip.textContent=t.dataset.tip;tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';tip.style.opacity=1;});
+render();
+</script>
+</body>
+</html>
