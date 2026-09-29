@@ -10,7 +10,7 @@
     Signing out needs a real HTTP request, because only an HTTP response can clear the cookie.
 *@
 <form id="@_formId" method="post" action="@AuthConstants.LogoutEndpoint" hidden>
-    <AntiforgeryToken />
+    @* The antiforgery token is added by auth.js just before posting. *@
     <input type="hidden" name="reason" value="@_reason" />
 </form>
 
@@ -36,7 +36,7 @@
         try
         {
             _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/auth.js");
-            await _module.InvokeVoidAsync("submitForm", _formId);
+            await _module.InvokeVoidAsync("submitForm", _formId, AuthConstants.AntiforgeryTokenEndpoint);
         }
         catch (Exception ex) when (ex is JSDisconnectedException or JSException or TaskCanceledException)
         {

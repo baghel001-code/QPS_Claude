@@ -19,6 +19,10 @@ public static class AuthConstants
     // would collide with the /Account/Logout page and throw AmbiguousMatchException.
     public const string CompleteLoginEndpoint = "/account/complete-login";
     public const string LogoutEndpoint = "/account/sign-out";
+
+    // GET: returns a fresh antiforgery token (and sets its cookie) for the two POSTs above.
+    // Used by wwwroot/js/auth.js so the forms work whether or not the page was prerendered.
+    public const string AntiforgeryTokenEndpoint = "/account/antiforgery-token";
 }
 
 public static class AuthClaimTypes

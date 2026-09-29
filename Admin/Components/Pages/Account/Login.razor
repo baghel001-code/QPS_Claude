@@ -117,7 +117,7 @@
 @if (_ticket is not null)
 {
     <form id="@CompleteFormId" method="post" action="@AuthConstants.CompleteLoginEndpoint" hidden>
-        <AntiforgeryToken />
+        @* The antiforgery token is added by auth.js just before posting. *@
         <input type="hidden" name="ticket" value="@_ticket" />
         <input type="hidden" name="returnUrl" value="@_returnUrl" />
     </form>
@@ -233,8 +233,19 @@
         if (!_submitPending)
             return;
         _submitPending = false;
-        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/auth.js");
-        await _module.InvokeVoidAsync("submitForm", CompleteFormId);
+        try
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/auth.js");
+            await _module.InvokeVoidAsync("submitForm", CompleteFormId, AuthConstants.AntiforgeryTokenEndpoint);
+        }
+        catch (Exception ex) when (ex is JSException or TaskCanceledException)
+        {
+            Logger.LogWarning(ex, "Could not post the sign-in form");
+            _ticket = null;
+            _busy = false;
+            _error = "Sign-in couldn't be completed. Please try again.";
+            StateHasChanged();
+        }
     }
 
     public async ValueTask DisposeAsync()

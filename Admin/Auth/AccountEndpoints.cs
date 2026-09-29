@@ -16,6 +16,7 @@ public static class AccountEndpoints
         // Anonymous: the fallback policy must not block signing in, or signing out an expired session.
         app.MapPost(AuthConstants.CompleteLoginEndpoint, CompleteLoginAsync).AllowAnonymous().ExcludeFromDescription();
         app.MapPost(AuthConstants.LogoutEndpoint, LogoutAsync).AllowAnonymous().ExcludeFromDescription();
+        app.MapGet(AuthConstants.AntiforgeryTokenEndpoint, GetAntiforgeryToken).AllowAnonymous().ExcludeFromDescription();
         return app;
     }
 
@@ -67,6 +68,19 @@ public static class AccountEndpoints
         http.Response.Headers.CacheControl = "no-store";
         http.Response.Headers["Clear-Site-Data"] = "\"cache\"";  // drop cached authenticated pages
         return Results.LocalRedirect($"{AuthConstants.LoginPath}?reason={reason}{tab}");
+    }
+
+    /// <summary>
+    /// An interactive page's &lt;AntiforgeryToken /&gt; is only filled in when the page was
+    /// prerendered, so auth.js asks here right before posting instead. The response also sets
+    /// the matching antiforgery cookie. Other sites can't read this response (same-origin
+    /// policy), so they still can't forge the POST.
+    /// </summary>
+    private static IResult GetAntiforgeryToken(HttpContext http, IAntiforgery antiforgery)
+    {
+        var tokens = antiforgery.GetAndStoreTokens(http);
+        http.Response.Headers.CacheControl = "no-store";
+        return Results.Json(new { field = tokens.FormFieldName, token = tokens.RequestToken });
     }
 
     private static async Task<bool> IsAntiforgeryValidAsync(HttpContext http, IAntiforgery antiforgery)

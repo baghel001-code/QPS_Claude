@@ -203,8 +203,8 @@ that created them (`VerifyPassword`) and stores new ones with `HashPassword`. Th
 
 - The render mode is set on each page. If `App.razor` already has `<Routes @rendermode="InteractiveServer" />`,
   the page directive is redundant but harmless.
-- Keep prerendering on (the default). The `<AntiforgeryToken />` inside interactive components
-  gets its token from the prerendered response.
+- Antiforgery tokens for the two POST forms come from `GET /account/antiforgery-token`, fetched by
+  `auth.js` just before submitting, so the forms work with or without prerendering.
 - `LoginTicketStore` is in memory. With several servers use sticky sessions (Blazor Server needs
   them anyway) or move it to Redis.
 - The lockout message tells a guesser that the account exists; that's the usual trade-off
