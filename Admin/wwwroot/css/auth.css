@@ -260,6 +260,27 @@
 .qps-note a:hover { color: var(--qps-primary); }
 .qps-note a:focus-visible { outline: 2px solid var(--qps-blue); outline-offset: 2px; border-radius: 2px; }
 
+/* Browser autofill (saved ID / password).
+   1. Chrome paints autofilled inputs light blue, but only the <input>, not the adornment
+      (eye icon) beside it, so the field looks split. Paint it white instead.
+   2. Autofill doesn't raise an input event, so MudBlazor doesn't know the field has a value
+      and leaves the label over the text. Float the label the same way MudBlazor does. */
+.qps-auth input:-webkit-autofill,
+.qps-auth input:-webkit-autofill:hover,
+.qps-auth input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #fff inset;
+    box-shadow: 0 0 0 1000px #fff inset;
+    -webkit-text-fill-color: var(--qps-ink);
+    caret-color: var(--qps-ink);
+    transition: background-color 9999s ease-out 0s;
+}
+.qps-auth .mud-input-control:has(input:-webkit-autofill) .mud-input-label-outlined,
+.qps-auth .mud-input-control:has(input:autofill) .mud-input-label-outlined {
+    transform: translate(14px, -6px) scale(0.75);
+    background-color: #fff;
+    padding: 0 4px;
+}
+
 /* CAPTCHA */
 .qps-captcha { display: grid; gap: 10px; margin-top: 16px; }
 .qps-captcha-row { display: flex; align-items: center; gap: 8px; }
