@@ -290,6 +290,12 @@ div.qps-captcha-img { width: 180px; }
 .qps-captcha-refresh:focus-visible { outline: 2px solid var(--qps-blue); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .qps-captcha-loading { animation: none; } .qps-captcha-refresh:hover:not(:disabled) { transform: none; } }
 
+/* /nopage */
+.qps-nopage-art {
+    display: grid; place-items: center; width: 96px; height: 96px; margin: 8px auto 24px;
+    border-radius: 50%; background: #fde6f3; color: var(--qps-primary);
+}
+
 /* ---------- small screens: brand panel becomes a header ---------- */
 @media (max-width: 900px) {
     .qps-auth { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }

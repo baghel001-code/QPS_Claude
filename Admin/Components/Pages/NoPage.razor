@@ -1,0 +1,42 @@
+@page "/nopage"
+@layout Admin.Components.Layout.AuthLayout
+@attribute [AllowAnonymous]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using MudBlazor
+
+@*
+    Shown when a sign-in link carried a ReturnUrl that isn't a page on this site
+    (see Auth/UrlSafety.cs). The user is not sent there, so a crafted link can't
+    redirect them to a look-alike site after they sign in.
+*@
+<PageTitle>Page not available · QPS</PageTitle>
+
+<div class="qps-eyebrow">Link not available</div>
+<h2 class="qps-title">We couldn't open that page</h2>
+<p class="qps-sub">
+    The link you followed points outside QPS, so we didn't open it. This protects you from
+    links that try to send you to another website after you sign in.
+</p>
+
+<div class="qps-nopage-art" aria-hidden="true">
+    <MudIcon Icon="@Icons.Material.Outlined.LinkOff" Style="font-size:56px" />
+</div>
+
+<MudStack Spacing="2">
+    <AuthorizeView>
+        <Authorized>
+            <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true">
+                Go to QPS home
+            </MudButton>
+        </Authorized>
+        <NotAuthorized>
+            <MudButton Href="/Account/Login" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true">
+                Sign in to QPS
+            </MudButton>
+        </NotAuthorized>
+    </AuthorizeView>
+    <MudText Typo="Typo.body2" Align="Align.Center" Class="mud-text-secondary">
+        If someone sent you this link, let the QPS support team know.
+    </MudText>
+</MudStack>
