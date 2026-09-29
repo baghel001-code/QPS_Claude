@@ -50,7 +50,7 @@ public static class AccountEndpoints
 
     private static async Task<IResult> LogoutAsync(HttpContext http, IAntiforgery antiforgery, ILoggerFactory loggerFactory)
     {
-        // POST + antiforgery: an <img src="/account/logout"> on another site can't sign users out.
+        // POST + antiforgery: an <img src="/account/sign-out"> on another site can't sign users out.
         if (!await IsAntiforgeryValidAsync(http, antiforgery))
             return Results.BadRequest();
 

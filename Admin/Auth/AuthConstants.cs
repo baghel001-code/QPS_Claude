@@ -15,8 +15,10 @@ public static class AuthConstants
     public const string AccessDeniedPath = "/Account/Access-Denied";
 
     // HTTP endpoints (AccountEndpoints) — the only places the cookie is written or cleared.
+    // Their paths must not equal a page route: routing ignores case, so "/account/logout"
+    // would collide with the /Account/Logout page and throw AmbiguousMatchException.
     public const string CompleteLoginEndpoint = "/account/complete-login";
-    public const string LogoutEndpoint = "/account/logout";
+    public const string LogoutEndpoint = "/account/sign-out";
 }
 
 public static class AuthClaimTypes

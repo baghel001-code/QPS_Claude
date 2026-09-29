@@ -163,7 +163,7 @@
         if (idle)
             InvalidationState.Reason = SessionInvalidReason.IdleTimeout;
 
-        // A real HTTP POST to /account/logout clears the auth cookie. Without it the circuit
+        // A real HTTP POST to /account/sign-out clears the auth cookie. Without it the circuit
         // is anonymous but F5 would sign the user straight back in.
         _ = _logoutForm?.SubmitAsync(idle ? "idle" : "");
     }

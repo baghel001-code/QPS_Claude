@@ -56,7 +56,7 @@ it has no audio version, so keep the refresh button and a helpdesk route for use
 
 ## Logout
 
-`LogoutForm` component = hidden `<form method=post action=/account/logout>` + antiforgery token.
+`LogoutForm` component = hidden `<form method=post action=/account/sign-out>` + antiforgery token.
 Calling `SubmitAsync()` posts it; the endpoint calls `SignOutAsync`, clears the session, sends
 `Clear-Site-Data: "cache"` and redirects to `/Account/Login?reason=signedout`.
 GET never signs out, so a link or `<img>` on another site can't log users out.
@@ -124,7 +124,7 @@ app.UseSession();            // only if you use HttpContext.Session
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
-app.MapAccountEndpoints();   // /account/complete-login, /account/logout
+app.MapAccountEndpoints();   // /account/complete-login, /account/sign-out
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 ```
 
