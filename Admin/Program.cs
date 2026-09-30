@@ -1,3 +1,4 @@
+using Admin.Auth;
 using Admin.Components;
 using Admin.Interfaces;
 using Admin.ServiceRegistration;
@@ -134,6 +135,7 @@ builder.Services.AddSingleton<NavMenuService>();
 builder.Services.AddSingleton<New_Enc_Dec>();
 builder.Services.AddSingleton<EncryptedQueryString>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
+builder.Services.AddQpsAuthUserStore(builder.Configuration, builder.Environment); // SQL Server users; see db/auth/001_auth_store.sql
 
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IUserValidationService, UserValidationService>();
