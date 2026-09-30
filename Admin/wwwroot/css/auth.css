@@ -233,6 +233,8 @@
 .qps-options .mud-checkbox { margin-inline-start: -11px; }   /* line the box up with the fields */
 .qps-options a { margin-inline-start: auto; white-space: nowrap; }
 
+.qps-remember-note { margin: -8px 0 16px; font-size: 12.5px; line-height: 1.45; color: var(--qps-muted); }
+
 /* Employee / Vendor switch */
 .qps-tabs {
     display: grid; grid-template-columns: 1fr 1fr; gap: 4px;

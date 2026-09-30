@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Options;
 
 namespace Admin.Auth;
 
@@ -22,7 +23,7 @@ public static class AccountEndpoints
 
     private static async Task<IResult> CompleteLoginAsync(
         HttpContext http, IAntiforgery antiforgery, LoginTicketStore tickets,
-        IAuthUserStore store, LandingPageResolver landing, TimeProvider clock, ILoggerFactory loggerFactory)
+        IAuthUserStore store, LandingPageResolver landing, IOptions<AuthSettings> options, TimeProvider clock, ILoggerFactory loggerFactory)
     {
         // Antiforgery stops "login CSRF": another site can't post a ticket it obtained
         // for its own account and sign the victim in as the attacker.
@@ -37,9 +38,19 @@ public static class AccountEndpoints
         if (ticket is null || user is not { IsActive: true })
             return Results.LocalRedirect($"{AuthConstants.LoginPath}?error=expired&ReturnUrl={Uri.EscapeDataString(returnUrl)}");
 
-        var principal = AuthClaims.CreatePrincipal(user, clock.GetUtcNow());
-        await http.SignInAsync(AuthConstants.Scheme, principal,
-            new AuthenticationProperties { IsPersistent = ticket.RememberMe, AllowRefresh = true });
+        // "Keep me signed in": persistent cookie (survives closing the browser) with the longer
+        // idle limit. The cookie handler keeps this per-sign-in length when it slides the expiry.
+        var settings = options.Value;
+        var rememberMe = ticket.RememberMe && settings.RememberMeEnabled;
+        var now = clock.GetUtcNow();
+        var principal = AuthClaims.CreatePrincipal(user, now, rememberMe);
+        await http.SignInAsync(AuthConstants.Scheme, principal, new AuthenticationProperties
+        {
+            IsPersistent = rememberMe,
+            AllowRefresh = true,
+            IssuedUtc = now,
+            ExpiresUtc = now + settings.IdleTimeoutFor(rememberMe),
+        });
 
         // A pre-login server session must not carry over into the authenticated one.
         if (http.Features.Get<ISessionFeature>() is not null)

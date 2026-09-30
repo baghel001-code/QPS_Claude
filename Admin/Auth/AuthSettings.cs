@@ -17,6 +17,23 @@ public sealed class AuthSettings
     /// <summary>How often an open session re-checks the user in the store (disabled, password changed).</summary>
     public int RevalidationMinutes { get; set; } = 5;
 
+    /// <summary>
+    /// "Keep me signed in": idle limit for users who tick it (cookie survives closing the browser).
+    /// Set RememberMeIdleTimeoutHours or RememberMeAbsoluteLifetimeDays to 0 to hide the checkbox.
+    /// </summary>
+    public int RememberMeIdleTimeoutHours { get; set; } = 8;
+
+    /// <summary>"Keep me signed in": hard limit after sign-in, even for an active user.</summary>
+    public int RememberMeAbsoluteLifetimeDays { get; set; } = 7;
+
+    public bool RememberMeEnabled => RememberMeIdleTimeoutHours > 0 && RememberMeAbsoluteLifetimeDays > 0;
+
+    public TimeSpan IdleTimeoutFor(bool rememberMe) =>
+        rememberMe && RememberMeEnabled ? TimeSpan.FromHours(RememberMeIdleTimeoutHours) : TimeSpan.FromMinutes(IdleTimeoutMinutes);
+
+    public TimeSpan AbsoluteLifetimeFor(bool rememberMe) =>
+        rememberMe && RememberMeEnabled ? TimeSpan.FromDays(RememberMeAbsoluteLifetimeDays) : TimeSpan.FromHours(AbsoluteLifetimeHours);
+
     public int MaxFailedAttempts { get; set; } = 5;
     public int LockoutMinutes { get; set; } = 15;
 

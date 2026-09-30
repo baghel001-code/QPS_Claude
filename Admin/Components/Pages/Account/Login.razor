@@ -17,6 +17,7 @@
 @inject AccountService Accounts
 @inject LoginTicketStore Tickets
 @inject LandingPageResolver Landing
+@inject Microsoft.Extensions.Options.IOptions<AuthSettings> AuthOptions
 @inject CaptchaService Captchas
 @inject NavigationManager Nav
 @inject IJSRuntime JS
@@ -76,12 +77,22 @@
     <CaptchaField @ref="_captcha" @bind-Value="_model.Captcha" For="@(() => _model.Captcha)" Disabled="_busy" />
 
     <div class="qps-options">
-        <MudCheckBox T="bool" @bind-Value="_model.RememberMe" Label="Keep me signed in" Disabled="_busy" />
+        @if (AuthOptions.Value.RememberMeEnabled)
+        {
+            <MudCheckBox T="bool" @bind-Value="_model.RememberMe" Label="Keep me signed in" Disabled="_busy" />
+        }
         @if (IsVendor)
         {
             <MudLink Href="/Account/Forgot-Password" Typo="Typo.body2">Forgot password?</MudLink>
         }
     </div>
+    @if (_model.RememberMe && AuthOptions.Value.RememberMeEnabled)
+    {
+        <p class="qps-remember-note">
+            You'll stay signed in on this device for up to @AuthOptions.Value.RememberMeAbsoluteLifetimeDays days,
+            or until @AuthOptions.Value.RememberMeIdleTimeoutHours hours without activity. Don't tick this on a shared computer.
+        </p>
+    }
 
     <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
                Size="Size.Large" FullWidth="true" Disabled="_busy">
