@@ -1,0 +1,335 @@
+/* Account pages (login, forgot, reset, logout). Change the brand colours here. */
+.qps-auth {
+    /* Vishal Mega Mart brand colours, sampled from the logo */
+    --qps-brand: #ed018b;        /* logo pink: highlights */
+    --qps-panel: #0f6cb1;        /* logo blue: brand panel */
+    --qps-panel-dark: #0a4a7d;   /* panel gradient end */
+    --qps-primary: #d4007c;      /* buttons/links: deeper pink so white text passes contrast (5.1:1) */
+    --qps-blue: #0f6cb1;         /* logo blue: accents, ticks */
+    --qps-accent: #0f6cb1;
+    --qps-ok: #0f6cb1;
+    --qps-bg: #f6f4f7;
+    --qps-card: #ffffff;
+    --qps-ink: #1d1a24;
+    --qps-muted: #625c6b;
+    --qps-kraft: #c99a62;        /* carton */
+    --qps-kraft-dark: #a97c47;
+
+    display: grid;
+    grid-template-columns: minmax(380px, 1.1fr) 1fr;
+    min-height: 100vh;
+    background: var(--qps-bg);
+    color: var(--qps-ink);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.qps-auth *, .qps-auth *::before, .qps-auth *::after { box-sizing: border-box; }
+
+/* ---------- brand panel ---------- */
+.qps-brand {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding: 40px 48px;
+    color: #fff;
+    background:
+        radial-gradient(circle at 88% 10%, rgba(237, 1, 139, .35) 0, transparent 40%),
+        radial-gradient(circle at 5% 95%, rgba(255, 255, 255, .12) 0, transparent 38%),
+        linear-gradient(160deg, var(--qps-panel) 0%, var(--qps-panel-dark) 100%);
+    overflow: hidden;
+}
+/* faint grid, like a warehouse floor plan */
+.qps-brand::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+}
+.qps-brand > * { position: relative; }
+
+.qps-brand-top { display: flex; align-items: center; gap: 12px; }
+.qps-logo-chip {
+    display: inline-flex; align-items: center;
+    background: #fff; border-radius: 10px; padding: 6px 10px;
+    box-shadow: 0 6px 16px rgba(0, 30, 60, .3);
+}
+.qps-logo-img { height: 36px; width: auto; display: block; }
+.qps-product { border-left: 1px solid rgba(255,255,255,.45); padding-left: 12px; }
+.qps-wordmark { font-weight: 800; font-size: 20px; letter-spacing: .08em; line-height: 1.1; }
+.qps-company { font-size: 12px; opacity: .85; letter-spacing: .02em; }
+
+.qps-brand-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 20px; }
+.qps-headline {
+    margin: 0; max-width: 16ch;
+    font-size: clamp(26px, 2.6vw, 36px); line-height: 1.2; font-weight: 700;
+    text-wrap: balance;
+}
+.qps-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(237,1,139,.6); flex: none; }
+
+/* ---------- slider ---------- */
+.qps-slider { display: flex; flex-direction: column; gap: 18px; }
+/* All slides share one grid cell, so the slider is as tall as the tallest slide and never jumps. */
+.qps-slides { display: grid; }
+.qps-slide {
+    grid-area: 1 / 1;
+    display: flex; flex-direction: column; gap: 18px;
+    opacity: 0; visibility: hidden; transform: translateX(28px);
+    transition: opacity .6s ease, transform .6s ease, visibility 0s linear .6s;
+}
+.qps-slide.active {
+    opacity: 1; visibility: visible; transform: none;
+    transition: opacity .6s ease, transform .6s ease, visibility 0s;
+}
+.qps-slide-media { display: flex; align-items: center; min-height: 0; }
+.qps-slide-photo {
+    width: 100%; max-width: 480px; aspect-ratio: 4 / 3; object-fit: cover;
+    border-radius: 16px; box-shadow: 0 18px 40px rgba(0, 25, 50, .35);
+    border: 4px solid rgba(255, 255, 255, .85);
+}
+.qps-slide-caption { margin: 0; max-width: 44ch; font-size: 15px; line-height: 1.5; opacity: .9; }
+
+.qps-slider-nav { display: flex; align-items: center; gap: 12px; }
+.qps-arrow {
+    display: grid; place-items: center; width: 34px; height: 34px;
+    border-radius: 50%; border: 1px solid rgba(255,255,255,.4);
+    padding: 0; box-shadow: none;
+    background: rgba(255,255,255,.08); color: #fff; cursor: pointer;
+    transition: background .15s;
+}
+.qps-arrow .mud-icon-root { width: 22px; height: 22px; }
+.qps-arrow:hover { background: rgba(255,255,255,.2); }
+.qps-dots { display: flex; gap: 8px; }
+.qps-dotbtn {
+    position: relative; overflow: hidden;
+    width: 10px; height: 10px; padding: 0; border: 0; border-radius: 5px; box-shadow: none;
+    background: rgba(255,255,255,.45); cursor: pointer;
+    transition: width .3s ease, background .3s;
+}
+.qps-dotbtn.active { width: 36px; background: rgba(255,255,255,.35); }
+.qps-dotbar {
+    position: absolute; inset: 0; transform-origin: left; background: var(--qps-brand);
+    animation: qps-fill 6s linear forwards;
+}
+.qps-dotbar.paused { animation-play-state: paused; }
+@keyframes qps-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.qps-arrow:focus-visible, .qps-dotbtn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.qps-headline-mobile { display: none; }
+
+/* ---------- illustration ---------- */
+.qps-art { width: 100%; max-width: 460px; height: auto; }
+.qps-art .a-shadow { fill: rgba(0, 25, 50, .3); }
+.qps-art .a-box { fill: var(--qps-kraft); }
+.qps-art .a-box-top { fill: var(--qps-kraft-dark); }
+.qps-art .a-tape { fill: #e3c393; }
+.qps-art .a-label { fill: #fff; }
+.qps-art .a-ink { fill: #2f3b4a; }
+.qps-art .a-board { fill: #7b5230; }
+.qps-art .a-paper { fill: #fff; }
+.qps-art .a-clip { fill: #c9d2dd; stroke: #8795a6; stroke-width: 2; }
+.qps-art .a-line { fill: #dfe5ec; }
+.qps-art .a-ok { fill: var(--qps-ok); }
+.qps-art .a-wait { fill: none; stroke: var(--qps-brand); stroke-width: 3; stroke-dasharray: 4 3; }
+.qps-art .a-tick { fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.qps-art .a-tag { fill: #fff; stroke: var(--qps-blue); stroke-width: 2; }
+.qps-art .a-hole { fill: var(--qps-brand); }
+.qps-art .a-lens { fill: rgba(255,255,255,.22); }
+.qps-art .a-ring { fill: none; stroke: #e8edf3; stroke-width: 8; }
+.qps-art .a-handle { stroke: #e8edf3; stroke-width: 12; stroke-linecap: round; }
+.qps-art .a-stamp-bg { fill: var(--qps-brand); }
+.qps-art .a-stamp-ring { fill: none; stroke: #ffffff; stroke-width: 4; }
+.qps-art .a-stamp-ring.thin { stroke-width: 1.5; }
+.qps-art .a-stamp-text { fill: #ffffff; font: 800 20px "Segoe UI", system-ui, sans-serif; letter-spacing: 2px; }
+.qps-art .a-stamp-small { fill: #ffffff; font: 700 10px "Segoe UI", system-ui, sans-serif; letter-spacing: 2px; }
+.qps-art .a-dot { fill: #fff; opacity: .7; }
+.qps-art .a-card-shadow { filter: drop-shadow(0 8px 14px rgba(0, 25, 50, .3)); }
+/* slide 2: truck, ASN, calendar */
+.qps-art .a-road { fill: rgba(255,255,255,.35); }
+.qps-art .a-road-mark { fill: rgba(255,255,255,.7); }
+.qps-art .a-truck-box { fill: #fff; }
+.qps-art .a-truck-band { fill: var(--qps-brand); }
+.qps-art .a-truck-text { fill: #fff; font: 800 16px "Segoe UI", system-ui, sans-serif; letter-spacing: 3px; }
+.qps-art .a-truck-cab { fill: #0b4f86; }
+.qps-art .a-truck-window { fill: #cfe4f5; }
+.qps-art .a-truck-bumper { fill: #093a63; }
+.qps-art .a-wheel { fill: #1d2430; }
+.qps-art .a-hub { fill: #c9d2dd; }
+.qps-art .a-pill { fill: #fde6f3; }
+.qps-art .a-pill-text { fill: var(--qps-primary); font: 700 8px "Segoe UI", system-ui, sans-serif; letter-spacing: 1px; }
+.qps-art .a-cal-head { fill: var(--qps-brand); }
+.qps-art .a-cal-title { fill: #fff; font: 700 10px "Segoe UI", system-ui, sans-serif; letter-spacing: 2px; }
+.qps-art .a-booked { fill: var(--qps-blue); }
+.qps-art .a-drive { animation: qps-drive 6s ease-in-out infinite; }
+@keyframes qps-drive { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(10px); } }
+/* slide 3: report screen */
+.qps-art .a-screen { fill: #0b3d66; }
+.qps-art .a-stand { fill: rgba(255,255,255,.55); }
+.qps-art .a-ring-bg { fill: none; stroke: #e6ebf1; stroke-width: 12; }
+.qps-art .a-ring-val { fill: none; stroke: var(--qps-brand); stroke-width: 12; stroke-linecap: round; }
+.qps-art .a-big { fill: #1d2430; font: 800 22px "Segoe UI", system-ui, sans-serif; }
+.qps-art .a-small { fill: #625c6b; font: 600 9px "Segoe UI", system-ui, sans-serif; }
+.qps-art .a-bar { fill: #9cc3e4; }
+.qps-art .a-bar.hi { fill: var(--qps-blue); }
+
+.qps-art .a-float { animation: qps-float 6s ease-in-out infinite; }
+.qps-art .a-delay { animation-delay: -3s; }
+@keyframes qps-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@media (prefers-reduced-motion: reduce) {
+    .qps-art .a-float, .qps-art .a-drive { animation: none; }
+    .qps-slide, .qps-slide.active { transition: none; transform: none; }
+    .qps-dotbar { animation: none; transform: scaleX(1); }
+}
+
+/* ---------- form side ---------- */
+.qps-panel {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 16px; padding: 40px 24px 16px;
+}
+/* Card and help line stay centred; the footer sits at the bottom of the form side. */
+.qps-panel-main {
+    flex: 1; width: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+}
+.qps-footer {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 10px;
+    width: 100%; padding-top: 14px; border-top: 1px solid #e6e0ea;
+    font-size: 12px; color: var(--qps-muted); text-align: center;
+}
+.qps-footer .qps-version { margin: 0; font-size: 11px; color: var(--qps-blue); border-color: #bcd6ec; }
+.qps-card {
+    width: 100%; max-width: 420px;
+    background: var(--qps-card);
+    border-radius: 16px;
+    padding: 36px 36px 28px;
+    box-shadow: 0 1px 2px rgba(60, 0, 35, .06), 0 14px 36px rgba(60, 0, 35, .12);
+    border-top: 4px solid transparent;
+    background-image: linear-gradient(var(--qps-card), var(--qps-card)), linear-gradient(90deg, var(--qps-brand), var(--qps-blue));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+}
+.qps-help { margin: 0; font-size: 13px; color: var(--qps-muted); }
+
+.qps-eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--qps-blue); margin-bottom: 6px;
+}
+.qps-title { margin: 0 0 4px; font-size: 26px; font-weight: 700; color: var(--qps-ink); }
+/* Blazor's <FocusOnNavigate Selector="h1"> focuses the page heading after each navigation
+   (so screen readers announce the page). Keep the focus, hide the outline around the heading. */
+.qps-title:focus, .qps-title:focus-visible { outline: none; }
+.qps-sub { margin: 0 0 24px; font-size: 14px; color: var(--qps-muted); }
+
+/* "Keep me signed in" on the left, "Forgot password?" on the right. Own rules instead of
+   MudBlazor utility classes, because MudCheckBox's width differs between MudBlazor versions. */
+.qps-options {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    gap: 8px 16px; margin: 16px 0;
+}
+.qps-options .mud-input-control { flex: 0 1 auto !important; width: auto !important; margin: 0 !important; }
+.qps-options .mud-checkbox { margin-inline-start: -11px; }   /* line the box up with the fields */
+.qps-options a { margin-inline-start: auto; white-space: nowrap; }
+
+/* Employee / Vendor switch */
+.qps-tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    padding: 4px; margin-bottom: 24px;
+    background: #f1edf3; border-radius: 10px;
+}
+.qps-tab {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 12px; border: 0; border-radius: 8px;
+    background: transparent; color: var(--qps-muted); box-shadow: none; letter-spacing: normal;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background .15s, color .15s, box-shadow .15s;
+}
+.qps-tab:hover:not(.active) { color: var(--qps-ink); }
+.qps-tab.active { background: #fff; color: var(--qps-primary); box-shadow: 0 1px 3px rgba(60, 0, 35, .14); }
+.qps-tab:focus-visible { outline: 2px solid var(--qps-blue); outline-offset: 2px; }
+.qps-tab:disabled { cursor: default; }
+
+/* Employee-only help text in place of "Forgot password?" */
+.qps-note {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin: 18px 0 0; padding: 10px 12px;
+    background: #eef5fb; color: #33475b; border-radius: 8px;
+    font-size: 13px; line-height: 1.45;
+}
+.qps-note .mud-icon-root { color: var(--qps-blue); flex: none; margin-top: 1px; }
+.qps-note a { color: var(--qps-blue); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.qps-note a:hover { color: var(--qps-primary); }
+.qps-note a:focus-visible { outline: 2px solid var(--qps-blue); outline-offset: 2px; border-radius: 2px; }
+
+/* Browser autofill (saved ID / password).
+   1. Chrome paints autofilled inputs light blue, but only the <input>, not the adornment
+      (eye icon) beside it, so the field looks split. Paint it white instead.
+   2. Autofill doesn't raise an input event, so MudBlazor doesn't know the field has a value
+      and leaves the label over the text. Float the label the same way MudBlazor does. */
+.qps-auth input:-webkit-autofill,
+.qps-auth input:-webkit-autofill:hover,
+.qps-auth input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #fff inset;
+    box-shadow: 0 0 0 1000px #fff inset;
+    -webkit-text-fill-color: var(--qps-ink);
+    caret-color: var(--qps-ink);
+    transition: background-color 9999s ease-out 0s;
+}
+.qps-auth .mud-input-control:has(input:-webkit-autofill) .mud-input-label-outlined,
+.qps-auth .mud-input-control:has(input:autofill) .mud-input-label-outlined {
+    transform: translate(14px, -6px) scale(0.75);
+    background-color: #fff;
+    padding: 0 4px;
+}
+
+/* CAPTCHA */
+.qps-captcha { display: grid; gap: 10px; margin-top: 16px; }
+.qps-captcha-row { display: flex; align-items: center; gap: 8px; }
+/* Fixed height, natural width: fits whatever size VmmCaptcha draws. */
+.qps-captcha-img {
+    display: block; height: 56px; width: auto; min-width: 140px; max-width: calc(100% - 48px);
+    object-fit: contain;
+    border: 1px solid #d6dbe4; border-radius: 8px; background: #fff;
+    user-select: none; -webkit-user-drag: none;
+}
+div.qps-captcha-img { width: 180px; }
+.qps-captcha-error {
+    display: flex; align-items: center; padding: 0 10px;
+    background: #fdecef; border-color: #f3b8c6; color: #8a1538; font-size: 12px; line-height: 1.3;
+}
+.qps-captcha-loading {
+    background: linear-gradient(90deg, #f1edf3 25%, #e6e0ea 50%, #f1edf3 75%);
+    background-size: 200% 100%; animation: qps-shimmer 1.2s linear infinite;
+}
+@keyframes qps-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.qps-captcha-refresh {
+    display: grid; place-items: center; width: 36px; height: 36px; padding: 0;
+    border: 1px solid #d6dbe4; border-radius: 50%; background: #fff; box-shadow: none;
+    color: var(--qps-blue); cursor: pointer; transition: background .15s, transform .3s;
+}
+.qps-captcha-refresh:hover:not(:disabled) { background: #eef5fb; transform: rotate(90deg); }
+.qps-captcha-refresh:disabled { opacity: .5; cursor: default; }
+.qps-captcha-refresh:focus-visible { outline: 2px solid var(--qps-blue); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .qps-captcha-loading { animation: none; } .qps-captcha-refresh:hover:not(:disabled) { transform: none; } }
+
+/* /nopage */
+.qps-nopage-art {
+    display: grid; place-items: center; width: 96px; height: 96px; margin: 8px auto 24px;
+    border-radius: 50%; background: #fde6f3; color: var(--qps-primary);
+}
+
+/* ---------- small screens: brand panel becomes a header ---------- */
+@media (max-width: 900px) {
+    .qps-auth { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .qps-brand { padding: 20px 20px 24px; gap: 12px; }
+    .qps-brand-body { flex: none; gap: 8px; }
+    .qps-headline { font-size: 20px; max-width: none; }
+    .qps-logo-img { height: 28px; }
+    .qps-slider { display: none; }
+    .qps-headline-mobile { display: block; }
+    .qps-panel { padding: 24px 16px 16px; }
+    .qps-panel-main { justify-content: flex-start; }
+    .qps-card { padding: 28px 22px 22px; margin-top: -8px; }
+}

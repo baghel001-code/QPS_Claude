@@ -1,0 +1,45 @@
+@inherits LayoutComponentBase
+@using Admin.Components.Account
+@using MudBlazor
+
+@* Split screen for the account pages: brand panel with illustration on the left, form card on the right.
+   Styles: wwwroot/css/auth.css. Brand colours: the --qps-* variables at the top of that file,
+   and QpsTheme.cs (keep them the same). *@
+<HeadContent>
+    <link rel="stylesheet" href="css/auth.css" />
+</HeadContent>
+
+<MudThemeProvider Theme="QpsTheme.Theme" />
+<MudPopoverProvider />
+
+<div class="qps-auth">
+    <aside class="qps-brand">
+        <div class="qps-brand-top">
+            <span class="qps-logo-chip"><img src="images/vmm-logo.png" alt="Vishal Mega Mart" class="qps-logo-img" /></span>
+            <div class="qps-product">
+                <div class="qps-wordmark">QPS</div>
+                <div class="qps-company">Quality portal</div>
+            </div>
+        </div>
+
+        <div class="qps-brand-body">
+            <LoginSlider />
+            @* Phones hide the slider and show this line instead. *@
+            <p class="qps-headline qps-headline-mobile">Every shipment checked before it reaches the shelf.</p>
+        </div>
+    </aside>
+
+    <main class="qps-panel">
+        <div class="qps-panel-main">
+            <div class="qps-card">
+                @Body
+            </div>
+            <p class="qps-help">Trouble signing in? Contact the QPS support team.</p>
+        </div>
+
+        <footer class="qps-footer">
+            <span>Copyright © @DateTime.Now.ToString("yyyy") Vishal Mega Mart</span>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="qps-version">@AppInfo.Version</MudChip>
+        </footer>
+    </main>
+</div>

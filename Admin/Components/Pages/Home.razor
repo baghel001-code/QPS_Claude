@@ -1,0 +1,30 @@
+@page "/"
+@layout Admin.Components.Layout.DashboardLayout
+@attribute [Authorize]
+@using Admin.Components.Dashboard
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
+@*
+    Everyone lands here after signing in. The layout (top bar, left menu) is shared; the
+    dashboard below depends on the user's type and primary role — see HomeDashboards.
+    Replaces any existing page with @page "/" (two pages on one route won't start).
+*@
+<PageTitle>Home · QPS</PageTitle>
+
+@if (_choice is not null)
+{
+    <DynamicComponent Type="_choice.Component" Parameters="_choice.Parameters" />
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private HomeDashboards.Choice? _choice;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthState is not null)
+            _choice = HomeDashboards.For((await AuthState).User);
+    }
+}

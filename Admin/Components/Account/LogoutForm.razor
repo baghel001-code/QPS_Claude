@@ -1,0 +1,52 @@
+@using Admin.Auth
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@*
+    Hidden POST form to /account/sign-out. Put it once in a layout and call SubmitAsync()
+    from a menu item, or from the idle-timeout monitor with reason "idle".
+    Signing out needs a real HTTP request, because only an HTTP response can clear the cookie.
+*@
+<form id="@_formId" method="post" action="@AuthConstants.LogoutEndpoint" hidden>
+    @* The antiforgery token is added by auth.js just before posting. *@
+    <input type="hidden" name="reason" value="@_reason" />
+</form>
+
+@code {
+    private readonly string _formId = "logout-" + Guid.NewGuid().ToString("N");
+    private string _reason = "";
+    private bool _submitPending;
+    private IJSObjectReference? _module;
+
+    /// <param name="reason">"idle" shows the inactivity message on the login page.</param>
+    public Task SubmitAsync(string reason = "") => InvokeAsync(() =>
+    {
+        _reason = reason;
+        _submitPending = true;   // submit after render, so the form carries the new reason
+        StateHasChanged();
+    });
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_submitPending)
+            return;
+        _submitPending = false;
+        try
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", AuthConstants.AuthScriptUrl);
+            await _module.InvokeVoidAsync("submitForm", _formId, AuthConstants.AntiforgeryTokenEndpoint);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or JSException or TaskCanceledException)
+        {
+            // Browser unreachable right now; the caller may retry (IdleTimeoutMonitor does every 5 s).
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { if (_module is not null) await _module.DisposeAsync(); }
+        catch (JSDisconnectedException) { }
+    }
+}
