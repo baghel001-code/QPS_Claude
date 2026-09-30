@@ -8,8 +8,9 @@ namespace Admin.Auth;
 /// Production <see cref="IAuthUserStore"/> backed by SQL Server.
 ///
 /// Users, roles and modules are read from the views in <c>db/auth/001_auth_store.sql</c>
-/// (<c>auth.vw_AuthUser</c>, <c>auth.vw_AuthUserRole</c>, <c>auth.vw_AuthUserModule</c>), which sit on
-/// top of the same employee / vendor tables the existing login pages use. Everything the old login
+/// (<c>auth.vw_AuthUser</c>, <c>auth.vw_AuthUserRole</c>, <c>auth.vw_AuthUserModule</c>) over
+/// <c>auth.AppUser</c> / <c>auth.UserRole</c> / <c>auth.UserModule</c>, which
+/// <c>db/auth/003_sync_from_legacy.sql</c> fills from the existing QPS user tables. Everything the old login
 /// never stored (password hash, security stamp, lockout, reset tokens) lives in <c>auth.UserSecurity</c>
 /// and <c>auth.PasswordResetToken</c>, keyed by the same <c>Id</c> ("E:{code}" / "V:{code}").
 /// </summary>

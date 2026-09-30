@@ -4,23 +4,35 @@
 the same `IAuthUserStore` against SQL Server, reading the real employee and vendor records that the
 existing login pages use.
 
-## Where data comes from
+## Database objects (`db/auth/`)
 
-| Data | Source |
+| Script | What it does |
 |---|---|
-| User, e-mail, display name, active flag | `auth.vw_AuthUser`, a view over your existing employee and vendor tables |
-| Roles | `auth.vw_AuthUserRole`. Names must match the `QpsRoles` constants |
-| Modules | `auth.vw_AuthUserModule` (can be empty) |
-| Password hash, security stamp, failed-login count, lockout | new table `auth.UserSecurity` |
-| Password reset tokens (stored hashed) | new table `auth.PasswordResetToken` |
+| `001_auth_store.sql` | Creates every object in schema `auth` (listed below) and seeds all roles and modules. Safe to run more than once. |
+| `002_seed_test_users.sql` | **Dev/test only.** Creates the same 18 test users as `InMemoryAuthUserStore`, with their roles and modules. Passwords aren't seeded. |
+| `003_sync_from_legacy.sql` | Optional. Copies employees, vendors and roles from the existing QPS tables into `auth.*`. Edit its `-- TODO` names first. You can run it on a schedule. |
 
-User ids keep the in-memory format: `E:{employee code}` and `V:{vendor code}`.
+| Object | Kind | Used by |
+|---|---|---|
+| `auth.AppUser` | table: employees and vendors. `Id` = `E:{code}` / `V:{code}` (computed) | views |
+| `auth.Role`, `auth.UserRole` | tables: role catalogue and user-role mapping | `vw_AuthUserRole` |
+| `auth.Module`, `auth.UserModule` | tables: module catalogue and user-module mapping | `vw_AuthUserModule` |
+| `auth.UserSecurity` | table: password hash, security stamp, failed logins, lockout | `SqlAuthUserStore` (read/write) |
+| `auth.PasswordResetToken` | table: hashed, single-use reset tokens | `SqlAuthUserStore` (read/write) |
+| `auth.vw_AuthUser`, `auth.vw_AuthUserRole`, `auth.vw_AuthUserModule` | views: the contract with the C# code | `SqlAuthUserStore` (read) |
+| `auth.usp_UpsertUser` | proc: create or update a user (rotates the security stamp when a user is deactivated) | admin screens, scripts |
+| `auth.usp_SetUserRoles`, `auth.usp_SetUserModules` | procs: replace roles/modules from a comma-separated list | admin screens, scripts |
+| `auth.usp_PurgeExpiredResetTokens` | proc: delete expired tokens | SQL Agent job (daily) |
+
+The seeded role and module names are the `QpsRoles` constant **names**, for example `CategoryHead`.
+If a constant's **value** is different, for example `CategoryHead = "CH"`, change the seed in
+`001` so the names match the values.
 
 ## Setup
 
-1. Edit the `-- TODO` table and column names in `db/auth/001_auth_store.sql` to match your schema.
-   Copy the "is this user allowed in" rules from the current login and from
-   `Get_User_Details_On_User_Code` into `vw_AuthUser.IsActive`. Then run the script.
+1. Run `001_auth_store.sql`. Then either run `003_sync_from_legacy.sql` (after editing its `-- TODO`
+   names) to bring in your real users, or create users with `auth.usp_UpsertUser` and
+   `auth.usp_SetUserRoles`. For a test database, run `002_seed_test_users.sql` instead.
 2. Add the connection string to `appsettings.json`:
    ```json
    "ConnectionStrings": { "QpsAuth": "Server=...;Database=...;..." }
@@ -31,7 +43,7 @@ User ids keep the in-memory format: `E:{employee code}` and `V:{vendor code}`.
    already brings it in. If the project doesn't get it that way, add
    `<PackageReference Include="Microsoft.Data.SqlClient" Version="5.*" />`.
 
-To keep using the seeded test users locally, set `"Auth": { "UseInMemoryStore": true }` in
+To keep using the in-memory test users locally, set `"Auth": { "UseInMemoryStore": true }` in
 `appsettings.Development.json`. This setting is ignored outside Development.
 
 ## Existing users' passwords
