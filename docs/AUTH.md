@@ -113,12 +113,6 @@ GET never signs out, so a link or `<img>` on another site can't log users out.
 
 ## Keeping sessions honest
 
-**Keep me signed in.** Ticked: persistent cookie, idle limit `Auth:RememberMeIdleTimeoutHours`
-(default 8 h, also used by the idle-timeout monitor) and absolute limit `Auth:RememberMeAbsoluteLifetimeDays`
-(default 7 days), marked by the `remember_me` claim. Not ticked: session cookie, 30 min idle, 12 h.
-Set either setting to 0 to hide the checkbox. Password reset or disabling a user still ends the session
-within `RevalidationMinutes`.
-
 | Check | Where | When |
 |---|---|---|
 | Idle timeout | cookie `ExpireTimeSpan` + sliding | every HTTP request |

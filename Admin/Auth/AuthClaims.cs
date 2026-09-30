@@ -5,7 +5,7 @@ namespace Admin.Auth;
 
 public static class AuthClaims
 {
-    public static ClaimsPrincipal CreatePrincipal(AuthUser user, DateTimeOffset signedInAt, bool rememberMe = false)
+    public static ClaimsPrincipal CreatePrincipal(AuthUser user, DateTimeOffset signedInAt)
     {
         var claims = new List<Claim>
         {
@@ -19,21 +19,15 @@ public static class AuthClaims
         };
         claims.AddRange(user.Roles.Select(r => new Claim(ClaimTypes.Role, r)));
         claims.AddRange(user.Modules.Select(m => new Claim(AuthClaimTypes.Module, m)));
-        if (rememberMe)
-            claims.Add(new Claim(AuthClaimTypes.RememberMe, "true"));
         if (user.MustChangePassword)
             claims.Add(new Claim(AuthClaimTypes.MustChangePassword, "true"));
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims, AuthConstants.Scheme, ClaimTypes.Name, ClaimTypes.Role));
     }
 
-    public static bool IsRememberMe(ClaimsPrincipal principal) =>
-        principal.FindFirst(AuthClaimTypes.RememberMe)?.Value == "true";
-
-    /// <summary>12 h after sign-in normally; 7 days for "Keep me signed in" (see AuthSettings).</summary>
     public static bool IsWithinAbsoluteLifetime(ClaimsPrincipal principal, AuthSettings settings, DateTimeOffset now) =>
         long.TryParse(principal.FindFirstValue(AuthClaimTypes.AuthTime), NumberStyles.None, CultureInfo.InvariantCulture, out var unix) &&
-        now - DateTimeOffset.FromUnixTimeSeconds(unix) < settings.AbsoluteLifetimeFor(IsRememberMe(principal));
+        now - DateTimeOffset.FromUnixTimeSeconds(unix) < TimeSpan.FromHours(settings.AbsoluteLifetimeHours);
 }
 
 /// <summary>Shared by the cookie handler (HTTP requests) and the circuit revalidator (open Blazor pages).</summary>

@@ -6,8 +6,6 @@
 @using Domain.Enums
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.JSInterop
-@using Microsoft.Extensions.Options
-@using Admin.Auth
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject NavigationManager Nav
@@ -15,7 +13,6 @@
 @inject IUserActivityState Activity
 @inject ISessionInvalidationState InvalidationState
 @inject AppConfigurationSettings Settings
-@inject IOptions<AuthSettings> AuthOptions
 
 @* Place once in MainLayout.razor. Renders nothing visible until the warning is due. *@
 <LogoutForm @ref="_logoutForm" />
@@ -60,17 +57,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        _isAuthenticated = state.User.Identity?.IsAuthenticated == true;
-
-        // "Keep me signed in" sessions get the longer idle limit (Auth:RememberMeIdleTimeoutHours).
-        _idleTimeout = AuthClaims.IsRememberMe(state.User) && AuthOptions.Value.RememberMeEnabled
-            ? AuthOptions.Value.IdleTimeoutFor(rememberMe: true)
-            : TimeSpan.FromMinutes(Math.Max(Settings.MaxSessionTime, 1));
+        _idleTimeout = TimeSpan.FromMinutes(Math.Max(Settings.MaxSessionTime, 1));
 
         // Must stay well under half the cookie lifetime so sliding expiration always renews.
         _keepAliveInterval = TimeSpan.FromTicks(Math.Clamp(_idleTimeout.Ticks / 4,
             TimeSpan.FromSeconds(30).Ticks, TimeSpan.FromMinutes(5).Ticks));
+
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        _isAuthenticated = state.User.Identity?.IsAuthenticated == true;
         AuthStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
     }
 
