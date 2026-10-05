@@ -9,7 +9,7 @@ public static class AuthServiceCollectionExtensions
 {
     /// <summary>
     /// Registers cookie authentication and the account services.
-    /// You still register your own <see cref="IAuthUserStore"/> and <see cref="IAuthEmailSender"/>.
+    /// You still register your own <see cref="IAuthUserStore"/>, <see cref="IEmployeeAuthApi"/> and <see cref="IAuthEmailSender"/>.
     /// </summary>
     public static IServiceCollection AddAppAuthentication(
         this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
@@ -33,6 +33,9 @@ public static class AuthServiceCollectionExtensions
         services.AddSingleton<LandingPageResolver>();
         services.AddSingleton<Admin.Navigation.AppMenu>();
         services.AddAuthorization(AppPolicies.Register);   // adds to any AddAuthorization in Program.cs
+        // How passwords are checked: vendors by the stored hash, employees by IEmployeeAuthApi (register yours).
+        services.AddScoped<ICredentialVerifier, VendorPasswordVerifier>();
+        services.AddScoped<ICredentialVerifier, EmployeeApiVerifier>();
         services.AddScoped<AccountService>();
         services.AddScoped<PasswordResetService>();
 

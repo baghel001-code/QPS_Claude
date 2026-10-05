@@ -151,6 +151,7 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddAppAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton<IAuthUserStore, InMemoryAuthUserStore>();  // DEV: replace with your DB store (scoped is fine)
 builder.Services.AddScoped<IAuthEmailSender, LoggingAuthEmailSender>();   // DEV: replace with your SMTP sender
+builder.Services.AddScoped<IEmployeeAuthApi, DevEmployeeAuthApi>();       // DEV: replace with your employee API client
 
 builder.Services.AddAuthorization(o => o.FallbackPolicy = /* your policy with anonymousPaths */);
 
@@ -200,6 +201,50 @@ Sign-out menu in `MainLayout.razor` (the layout must be interactive):
 ```
 
 `IdleTimeoutMonitor.razor` already contains its own `LogoutForm` and submits it with reason `idle`.
+
+## Employees: password checked by the employee API
+
+Vendors and employees go through the same `AccountService.ValidateCredentialsAsync`. Only step 3
+(checking the password) differs, through `ICredentialVerifier`:
+
+| Step | Vendor | Employee |
+|---|---|---|
+| 1. Find user (`IAuthUserStore.FindByLoginAsync`) | QPS vendor row | QPS user row: roles, modules, active, lockout |
+| 2. Locked out? | yes → refuse | yes → refuse, API not called |
+| 3. Check password | `VendorPasswordVerifier`: `IPasswordHasher.VerifyPassword` | `EmployeeApiVerifier`: `IEmployeeAuthApi.AuthenticateAsync(userName, password)` |
+| 4. Wrong → count, lock after 5 | same | same |
+| 5. Disabled in QPS? | refuse | refuse |
+| 6. Success → ticket → cookie | same | same |
+
+- The API is only called for people who have a QPS user row, so QPS can't be used to test
+  MyVishal passwords of employees who aren't QPS users.
+- API down, error or 15 s timeout → "Sign-in is temporarily unavailable"; not counted as a failure.
+- The API's answer is accepted only if its employee code equals the QPS user name.
+- Every failed attempt takes at least 1 second, so timing doesn't reveal which step failed.
+- Employee rows need no password hash (`PasswordHash = ""`). They still need a `SecurityStamp`
+  (any stable value; change it to end that user's sessions) and the lockout columns.
+
+Implement `IEmployeeAuthApi` with your existing API client. Sketch (adjust names to your API):
+
+```csharp
+public sealed class QpsEmployeeAuthApi(/* your API client */) : IEmployeeAuthApi
+{
+    public async Task<EmployeeApiUser?> AuthenticateAsync(string userName, string password, CancellationToken ct = default)
+    {
+        var response = await api.CallingAPI<EmployeeLoginRes, EmployeeLoginReq>(
+            AllApiNames.EmployeeLogin, new EmployeeLoginReq(userName, password));
+
+        if (response is null)
+            throw new HttpRequestException("Employee API returned nothing");      // → unavailable
+        if (response.responseCode != 0)
+            return null;                                                        // wrong user name / password
+        return new EmployeeApiUser(response.ApiData.EmpCode, response.ApiData.Name, response.ApiData.Email);
+    }
+}
+```
+
+If the API can't tell "wrong password" from "server error", return `null` only for the
+wrong-password response and throw for everything else.
 
 ## Database (implement `IAuthUserStore`)
 

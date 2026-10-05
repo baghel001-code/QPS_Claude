@@ -2,41 +2,60 @@ using Microsoft.Extensions.Options;
 
 namespace Admin.Auth;
 
-public enum LoginStatus { Success, InvalidCredentials, LockedOut, Disabled }
+public enum LoginStatus { Success, InvalidCredentials, LockedOut, Disabled, ServiceUnavailable }
 
 public sealed record LoginResult(LoginStatus Status, AuthUser? User = null);
 
 /// <summary>
 /// Checks credentials. Runs inside the Blazor circuit, so it never touches HttpContext;
 /// the cookie is issued later by <see cref="AccountEndpoints"/>.
+/// How the password itself is checked depends on the account type (<see cref="ICredentialVerifier"/>):
+/// vendors against the hash in the QPS database, employees through the employee API.
 /// </summary>
 public sealed class AccountService(
     IAuthUserStore store,
-    AppPasswordHasher hasher,
+    IEnumerable<ICredentialVerifier> verifiers,
     IOptions<AuthSettings> options,
     TimeProvider clock,
     ILogger<AccountService> logger)
 {
-    // Verified against when the user does not exist (or has no password yet), so that case
-    // takes as long as "wrong password" and response time does not reveal real usernames.
-    // Made with the app's own hasher so the timing matches it.
-    private static string? _dummyHash;
+    // Every failed attempt takes at least this long, so "unknown user" (no password check),
+    // "wrong password" (hash or API call) and "not a QPS user" can't be told apart by timing.
+    // It also slows down guessing.
+    private static readonly TimeSpan MinimumFailureDuration = TimeSpan.FromSeconds(1);
+
+    private readonly Dictionary<AccountType, ICredentialVerifier> _verifiers =
+        verifiers.ToDictionary(v => v.AccountType);
 
     public async Task<LoginResult> ValidateCredentialsAsync(
         string login, string password, AccountType type, CancellationToken ct = default)
     {
-        var settings = options.Value;
-        login = login.Trim();
+        var started = clock.GetTimestamp();
+        var result = await CheckAsync(login.Trim(), password, type, ct);
+        if (result.Status is LoginStatus.InvalidCredentials)
+        {
+            var remaining = MinimumFailureDuration - clock.GetElapsedTime(started);
+            if (remaining > TimeSpan.Zero)
+                await Task.Delay(remaining, clock, ct);
+        }
+        return result;
+    }
 
+    private async Task<LoginResult> CheckAsync(string login, string password, AccountType type, CancellationToken ct)
+    {
+        var settings = options.Value;
+
+        // 1. Find the QPS user on the chosen tab. For employees this is the QPS user row (roles,
+        //    modules, status, lockout); the API is not called for people who aren't QPS users.
         var user = await store.FindByLoginAsync(login, type, ct);
         // The type check repeats the store's filter so a store bug can't let a vendor in through the employee tab.
         if (user is null || user.AccountType != type)
         {
-            Verify(password, DummyHash());
-            logger.LogInformation("Sign-in failed: unknown login");
+            logger.LogInformation("Sign-in failed: unknown {Type} login", type);
             return new(LoginStatus.InvalidCredentials);
         }
 
+        // 2. Locked out: refuse without checking the password (and without calling the API).
         var now = clock.GetUtcNow();
         if (user.LockoutEndUtc > now)
         {
@@ -44,17 +63,20 @@ public sealed class AccountService(
             return new(LoginStatus.LockedOut);
         }
 
-        bool passwordOk;
-        if (string.IsNullOrEmpty(user.PasswordHash))
+        // 3. Check the password: vendor hash or employee API.
+        if (!_verifiers.TryGetValue(type, out var verifier))
+            throw new InvalidOperationException($"No ICredentialVerifier is registered for {type} accounts.");
+        var check = await verifier.VerifyAsync(user, password, ct);
+
+        if (check == CredentialResult.Unavailable)
         {
-            Verify(password, DummyHash());   // no password set: always fails, but takes the same time
-            passwordOk = false;
+            // Not the user's fault: no failed attempt is recorded.
+            logger.LogWarning("Sign-in not possible for {UserId}: {Type} credential service unavailable", user.Id, type);
+            return new(LoginStatus.ServiceUnavailable);
         }
-        else
-        {
-            passwordOk = Verify(password, user.PasswordHash);
-        }
-        if (!passwordOk)
+
+        // 4. Wrong password: count it, lock after MaxFailedAttempts.
+        if (check == CredentialResult.Invalid)
         {
             var failures = await store.RecordFailedLoginAsync(user.Id, ct);
             if (failures >= settings.MaxFailedAttempts)
@@ -67,33 +89,18 @@ public sealed class AccountService(
             return new(LoginStatus.InvalidCredentials);
         }
 
-        // Checked only after the password is right, so a guesser can't learn that the account is disabled.
+        // 5. Disabled in QPS. Checked only after the password is right, so a guesser can't learn it.
         if (!user.IsActive)
         {
             logger.LogInformation("Sign-in refused: {UserId} is disabled", user.Id);
             return new(LoginStatus.Disabled);
         }
 
+        // 6. Success: reset the failure counter.
         if (user.FailedLoginCount > 0 || user.LockoutEndUtc is not null)
             await store.ClearLockoutAsync(user.Id, ct);
 
         logger.LogInformation("Credentials verified for {UserId}", user.Id);
         return new(LoginStatus.Success, user);
-    }
-
-    private string DummyHash() => _dummyHash ??= hasher.HashPassword(Guid.NewGuid().ToString("N"));
-
-    /// <summary>A hash the hasher can't parse (corrupt row, old format) counts as a wrong password.</summary>
-    private bool Verify(string password, string hash)
-    {
-        try
-        {
-            return hasher.VerifyPassword(password, hash);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Stored password hash could not be verified");
-            return false;
-        }
     }
 }
