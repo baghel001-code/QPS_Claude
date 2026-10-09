@@ -272,62 +272,13 @@ that wraps your existing session-token service:
 builder.Services.AddScoped<ISingleSessionGuard, QpsSingleSessionGuard>();
 ```
 
-Adapter sketch (names of your service and request type may differ):
+The adapter is `Admin/Auth/QpsSingleSessionGuard.cs`. It calls the existing `IUserValidationService`:
 
-```csharp
-public sealed class QpsSingleSessionGuard(
-    ISessionTokenService sessionTokenService,
-    ILogger<QpsSingleSessionGuard> logger) : ISingleSessionGuard
-{
-    // Sign-in: issue a new token (your service ends the old one).
-    public async Task<StartedSession> StartAsync(AuthUser user, SessionClient client, CancellationToken ct)
-    {
-        var request = Request(user.Id, user.UserName, user.AccountType, null, await DescribeAsync(client));
-        var hadExistingSession = await sessionTokenService.HasActiveSessionAsync(request);   // or a flag on the response
-        var response = await sessionTokenService.IssueNewSessionAsync(request, ct);
-        if (string.IsNullOrEmpty(response.SessionToken))
-            throw new InvalidOperationException("IssueNewSessionAsync returned no token");      // → "temporarily unavailable"
-        return new StartedSession(response.SessionToken, hadExistingSession);
-    }
-
-    // Every check: is this token still the user's active session?
-    public async Task<bool> IsCurrentAsync(SessionOwner s, CancellationToken ct)
-    {
-        try
-        {
-            var response = await sessionTokenService.IsSessionValidAsync(Request(s.UserId, s.UserName, s.AccountType, s.Token, null), ct);
-            return response.IsValid;
-        }
-        catch (Exception ex) when (!ct.IsCancellationRequested)
-        {
-            logger.LogWarning(ex, "Session check failed for {UserId}; keeping the session until the next check", s.UserId);
-            return true;   // a DB/API hiccup must not sign everyone out
-        }
-    }
-
-    // Sign-out / idle: clear THIS token only.
-    public Task EndAsync(SessionOwner s, CancellationToken ct) =>
-        sessionTokenService.ClearSessionAsync(Request(s.UserId, s.UserName, s.AccountType, s.Token, null), ct);
-
-    private static IssueSessionRequest Request(string authUserId, string userCode, AccountType type, string? token, string? clientInfo)
-    {
-        UserLoginRecord.TryParseId(authUserId, out _, out var id);           // "V:88" → 88
-        var userType = type == AccountType.Vendor ? "VENDOR" : "EMPLOYEE";  // the values your table uses
-        return new IssueSessionRequest(userType, userCode, (int)id, token, clientInfo);
-    }
-
-    private static async Task<string> DescribeAsync(SessionClient client)
-    {
-        var host = "";
-        if (System.Net.IPAddress.TryParse(client.IpAddress, out var ip))
-        {
-            try { host = (await System.Net.Dns.GetHostEntryAsync(ip)).HostName; }   // reverse DNS can be slow
-            catch (System.Net.Sockets.SocketException) { }
-        }
-        return $"{client.IpAddress} / {host}";
-    }
-}
-```
+| Guard | IUserValidationService | API |
+|---|---|---|
+| `StartAsync` | `HasActiveSessionAsync`, then `IssueNewSessionAsync` | VALIDATE_USER_SESSION, ACTIVATE_USER_SESSION |
+| `IsCurrentAsync` | `IsSessionValidAsync` (an error counts as valid until the next check) | VALIDATE_USER_SESSION |
+| `EndAsync` | `ClearSessionAsync` (must clear only the given token) | CLEAR_USER_SESSION |
 
 ## Database (implement `IAuthUserStore`)
 
