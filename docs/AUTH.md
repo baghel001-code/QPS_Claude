@@ -277,34 +277,37 @@ Adapter sketch (names of your service and request type may differ):
 ```csharp
 public sealed class QpsSingleSessionGuard(
     ISessionTokenService sessionTokenService,
-    IUserValidationService userValidationService,
     ILogger<QpsSingleSessionGuard> logger) : ISingleSessionGuard
 {
+    // Sign-in: issue a new token (your service ends the old one).
     public async Task<StartedSession> StartAsync(AuthUser user, SessionClient client, CancellationToken ct)
     {
-        var request = Request(user.Id, user.UserName, user.AccountType, token: null, clientInfo: await DescribeAsync(client));
-        var hadExistingSession = await sessionTokenService.HasActiveSessionAsync(request);
-        var sessionToken = await sessionTokenService.IssueNewSessionAsync(request);   // ends the old one
-        return new StartedSession(sessionToken, hadExistingSession);
+        var request = Request(user.Id, user.UserName, user.AccountType, null, await DescribeAsync(client));
+        var hadExistingSession = await sessionTokenService.HasActiveSessionAsync(request);   // or a flag on the response
+        var response = await sessionTokenService.IssueNewSessionAsync(request, ct);
+        if (string.IsNullOrEmpty(response.SessionToken))
+            throw new InvalidOperationException("IssueNewSessionAsync returned no token");      // → "temporarily unavailable"
+        return new StartedSession(response.SessionToken, hadExistingSession);
     }
 
-    public async Task<bool> IsCurrentAsync(SessionOwner session, CancellationToken ct)
+    // Every check: is this token still the user's active session?
+    public async Task<bool> IsCurrentAsync(SessionOwner s, CancellationToken ct)
     {
         try
         {
-            return await userValidationService.IsSessionValidAsync(
-                Request(session.UserId, session.UserName, session.AccountType, session.Token, null), ct);
+            var response = await sessionTokenService.IsSessionValidAsync(Request(s.UserId, s.UserName, s.AccountType, s.Token, null), ct);
+            return response.IsValid;
         }
         catch (Exception ex) when (!ct.IsCancellationRequested)
         {
-            logger.LogWarning(ex, "Session check failed; keeping {UserId} signed in until the next check", session.UserId);
-            return true;   // DB/API hiccup must not sign everyone out
+            logger.LogWarning(ex, "Session check failed for {UserId}; keeping the session until the next check", s.UserId);
+            return true;   // a DB/API hiccup must not sign everyone out
         }
     }
 
-    public Task EndAsync(SessionOwner session, CancellationToken ct) =>
-        // Your "end session" method; it must end only this token.
-        sessionTokenService.EndSessionAsync(Request(session.UserId, session.UserName, session.AccountType, session.Token, null));
+    // Sign-out / idle: clear THIS token only.
+    public Task EndAsync(SessionOwner s, CancellationToken ct) =>
+        sessionTokenService.ClearSessionAsync(Request(s.UserId, s.UserName, s.AccountType, s.Token, null), ct);
 
     private static IssueSessionRequest Request(string authUserId, string userCode, AccountType type, string? token, string? clientInfo)
     {
