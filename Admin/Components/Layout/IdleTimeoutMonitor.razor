@@ -12,7 +12,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IUserActivityState Activity
 @inject ISessionInvalidationState InvalidationState
-@inject AppConfigurationSettings Settings
+@inject Microsoft.Extensions.Options.IOptions<Admin.Auth.AuthSettings> AuthOptions
 
 @* Place once in MainLayout.razor. Renders nothing visible until the warning is due. *@
 <LogoutForm @ref="_logoutForm" />
@@ -57,7 +57,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _idleTimeout = TimeSpan.FromMinutes(Math.Max(Settings.MaxSessionTime, 1));
+        // Same limit as the auth cookie and the server-side idle check (Auth:IdleTimeoutMinutes),
+        // so the warning always comes before either of them signs the user out.
+        _idleTimeout = TimeSpan.FromMinutes(Math.Max(AuthOptions.Value.IdleTimeoutMinutes, 1));
 
         // Must stay well under half the cookie lifetime so sliding expiration always renews.
         _keepAliveInterval = TimeSpan.FromTicks(Math.Clamp(_idleTimeout.Ticks / 4,
