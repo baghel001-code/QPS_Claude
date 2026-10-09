@@ -45,7 +45,18 @@ public interface ISingleSessionGuard
     Task EndAsync(SessionOwner session, CancellationToken ct);
 }
 
-public enum SessionEndReason { None, Replaced, Expired }
+public enum SessionEndReason { None, Replaced, Expired, Idle }
+
+public static class SessionEndReasons
+{
+    /// <summary>The ?reason= value the login page shows a message for.</summary>
+    public static string ToQuery(SessionEndReason reason) => reason switch
+    {
+        SessionEndReason.Replaced => "replaced",
+        SessionEndReason.Idle => "idle",
+        _ => "expired",
+    };
+}
 
 /// <summary>Per circuit: why the session check signed the user out (set by AppRevalidatingAuthStateProvider).</summary>
 public sealed class SessionEndState

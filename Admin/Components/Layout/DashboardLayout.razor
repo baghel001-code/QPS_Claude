@@ -129,7 +129,7 @@
             return;
         _endingSession = true;
         if (_logout is not null)
-            await _logout.SubmitAsync(SessionEnd.Reason == SessionEndReason.Replaced ? "replaced" : "expired");
+            await _logout.SubmitAsync(SessionEndReasons.ToQuery(SessionEnd.Reason));
     });
 
     public void Dispose() => AuthStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;

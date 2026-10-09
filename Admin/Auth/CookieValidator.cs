@@ -43,7 +43,19 @@ internal static class CookieValidator
 
         var store = services.GetRequiredService<IAuthUserStore>();
         var guard = services.GetService<ISingleSessionGuard>();
-        var reason = await SessionValidation.CheckAsync(principal, store, guard, settings, now, context.HttpContext.RequestAborted);
+        SessionEndReason reason;
+        try
+        {
+            reason = await SessionValidation.CheckAsync(principal, store, guard, settings, now, context.HttpContext.RequestAborted);
+        }
+        catch (Exception ex) when (!context.HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            // DB/API down: let this request through and try again on the next one (the time of the
+            // last successful check is not updated). Open pages give up after 5 failures in a row.
+            services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(CookieValidator))
+                .LogWarning(ex, "Session check failed; trying again on the next request");
+            return;
+        }
         if (reason != SessionEndReason.None)
         {
             await RejectAsync(context, reason);
@@ -57,7 +69,7 @@ internal static class CookieValidator
     private static async Task RejectAsync(CookieValidatePrincipalContext context, SessionEndReason reason)
     {
         // Shown on the login page as ?reason=replaced / expired (see AuthServiceCollectionExtensions).
-        context.HttpContext.Items[AuthConstants.EndReasonItem] = reason == SessionEndReason.Replaced ? "replaced" : "expired";
+        context.HttpContext.Items[AuthConstants.EndReasonItem] = SessionEndReasons.ToQuery(reason);
         context.RejectPrincipal();
         await context.HttpContext.SignOutAsync(context.Scheme.Name);
     }
