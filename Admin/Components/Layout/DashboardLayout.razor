@@ -1,0 +1,147 @@
+@inherits LayoutComponentBase
+@using System.Security.Claims
+@using Admin.Auth
+@using Admin.Components.Account
+@using Microsoft.AspNetCore.Components.Authorization
+@using MudBlazor
+@inject AuthenticationStateProvider AuthStateProvider
+@inject SessionEndState SessionEnd
+@inject LoginNotices Notices
+@implements IDisposable
+
+@*
+    Shared layout for every page after sign-in: top bar (logo, user menu, sign out) and a
+    left drawer whose menu depends on the user's role IDs and modules (AppNavMenu / AppMenu).
+    Use it with @layout DashboardLayout, or make it the default in Routes.razor:
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.DashboardLayout)" />
+    Needs interactive rendering (the drawer toggle and idle timeout run in the circuit).
+*@
+<HeadContent>
+    <link rel="stylesheet" href="css/app-shell.css" />
+</HeadContent>
+
+<MudThemeProvider Theme="QpsTheme.Theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout Class="qps-shell">
+    <MudAppBar Elevation="0" Dense="false" Class="qps-appbar">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       aria-label="@(_drawerOpen ? "Close menu" : "Open menu")" aria-expanded="@(_drawerOpen ? "true" : "false")"
+                       OnClick="() => _drawerOpen = !_drawerOpen" />
+        @* The logo sits in the drawer header while the drawer is open, and here (right of the menu button) when it's closed. *@
+        @if (!_drawerOpen)
+        {
+            <a href="/" class="qps-appbar-brand" aria-label="QPS home">
+                <img src="images/vmm-logo.png" alt="Vishal Mega Mart" class="qps-appbar-logo" />
+                <span class="qps-appbar-product">QPS</span>
+            </a>
+        }
+        <MudSpacer />
+
+        <AuthorizeView>
+            <Authorized>
+                <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Class="qps-usermenu">
+                    <ActivatorContent>
+                        <div class="qps-userchip">
+                            <span class="qps-avatar">@Initials(context.User)</span>
+                            <span class="qps-userchip-text">
+                                <span class="qps-userchip-name">@DisplayName(context.User)</span>
+                                <span class="qps-userchip-sub">@Subtitle(context.User)</span>
+                            </span>
+                            <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
+                        </div>
+                    </ActivatorContent>
+                    <ChildContent>
+                        @if (AppPolicies.IsType(context.User, AccountType.Vendor))
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Outlined.Password" Href="/changepassword">Change password</MudMenuItem>
+                        }
+                        <MudMenuItem Icon="@Icons.Material.Outlined.Logout" OnClick="SignOutAsync">Sign out</MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+            </Authorized>
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Never" Variant="DrawerVariant.Responsive"
+               Elevation="0" Class="qps-drawer">
+        <MudDrawerHeader Class="qps-drawer-head">
+            <a href="/" class="qps-appbar-brand" aria-label="QPS home">
+                <img src="images/vmm-logo.png" alt="Vishal Mega Mart" class="qps-appbar-logo" />
+                <span class="qps-appbar-product">QPS</span>
+            </a>
+        </MudDrawerHeader>
+        <AppNavMenu SignOut="SignOutAsync" />
+    </MudDrawer>
+
+    <MudMainContent Class="qps-main">
+        <div class="qps-page">
+            @if (_notice is not null)
+            {
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4"
+                          ShowCloseIcon="true" CloseIconClicked="() => _notice = null">@_notice</MudAlert>
+            }
+            @Body
+        </div>
+        <footer class="qps-shell-footer">
+            <span>Copyright © @DateTime.Now.ToString("yyyy") Vishal Mega Mart</span>
+            <span class="qps-shell-version">@AppInfo.Version</span>
+        </footer>
+    </MudMainContent>
+</MudLayout>
+
+<LogoutForm @ref="_logout" />
+<IdleTimeoutMonitor />
+
+@code {
+    private bool _drawerOpen = true;
+    private LogoutForm? _logout;
+
+    private string? _notice;
+    private bool _endingSession;
+
+    private Task SignOutAsync() => _logout?.SubmitAsync() ?? Task.CompletedTask;
+
+    protected override void OnInitialized() =>
+        AuthStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        // One-time notice from the sign-in (AccountEndpoints): the other device was signed out.
+        var user = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
+        if (Notices.Take(user.FindFirst(AuthClaimTypes.SessionId)?.Value) == LoginNotices.DuplicateLogin)
+        {
+            _notice = "Your account was signed in on another device. That session has been signed out.";
+            StateHasChanged();
+        }
+    }
+
+    // The session check (AppRevalidatingAuthStateProvider) ended this session, e.g. because the
+    // user signed in on another device: clear the cookie now and show the reason on the login page.
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> task) => _ = InvokeAsync(async () =>
+    {
+        var state = await task;
+        if (state.User.Identity?.IsAuthenticated == true || SessionEnd.Reason == SessionEndReason.None || _endingSession)
+            return;
+        _endingSession = true;
+        if (_logout is not null)
+            await _logout.SubmitAsync(SessionEndReasons.ToQuery(SessionEnd.Reason));
+    });
+
+    public void Dispose() => AuthStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+
+    internal static string DisplayName(ClaimsPrincipal user) =>
+        user.FindFirst(AuthClaimTypes.DisplayName)?.Value ?? user.Identity?.Name ?? "User";
+
+    private static string Initials(ClaimsPrincipal user)
+    {
+        var parts = DisplayName(user).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Concat(parts.Take(2).Select(p => char.ToUpperInvariant(p[0])));
+    }
+
+    private static string Subtitle(ClaimsPrincipal user) => QpsRoles.Describe(user);
+}

@@ -1,0 +1,14 @@
+@* Coloured status label; the colour follows the wording so every table stays consistent. *@
+<span class="qps-status qps-status-@Kind">@Status</span>
+
+@code {
+    [Parameter, EditorRequired] public string Status { get; set; } = "";
+
+    private string Kind => Status.ToLowerInvariant() switch
+    {
+        var s when s.Contains("pass") || s.Contains("approv") || s.Contains("deliver") || s.Contains("active") || s.Contains("done") || s == "generated" => "ok",
+        var s when s.Contains("fail") || s.Contains("reject") || s.Contains("overdue") || s.Contains("locked") || s.Contains("cancel") => "bad",
+        var s when s.Contains("progress") || s.Contains("transit") || s.Contains("ongoing") || s == "received" => "info",
+        _ => "wait",
+    };
+}
