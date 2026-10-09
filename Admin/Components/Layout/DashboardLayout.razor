@@ -4,6 +4,10 @@
 @using Admin.Components.Account
 @using Microsoft.AspNetCore.Components.Authorization
 @using MudBlazor
+@inject AuthenticationStateProvider AuthStateProvider
+@inject SessionEndState SessionEnd
+@inject LoginNotices Notices
+@implements IDisposable
 
 @*
     Shared layout for every page after sign-in: top bar (logo, user menu, sign out) and a
@@ -74,6 +78,11 @@
 
     <MudMainContent Class="qps-main">
         <div class="qps-page">
+            @if (_notice is not null)
+            {
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4"
+                          ShowCloseIcon="true" CloseIconClicked="() => _notice = null">@_notice</MudAlert>
+            }
             @Body
         </div>
         <footer class="qps-shell-footer">
@@ -90,7 +99,40 @@
     private bool _drawerOpen = true;
     private LogoutForm? _logout;
 
+    private string? _notice;
+    private bool _endingSession;
+
     private Task SignOutAsync() => _logout?.SubmitAsync() ?? Task.CompletedTask;
+
+    protected override void OnInitialized() =>
+        AuthStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        // One-time notice from the sign-in (AccountEndpoints): the other device was signed out.
+        var user = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
+        if (Notices.Take(user.FindFirst(AuthClaimTypes.SessionId)?.Value) == LoginNotices.DuplicateLogin)
+        {
+            _notice = "Your account was signed in on another device. That session has been signed out.";
+            StateHasChanged();
+        }
+    }
+
+    // The session check (AppRevalidatingAuthStateProvider) ended this session, e.g. because the
+    // user signed in on another device: clear the cookie now and show the reason on the login page.
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> task) => _ = InvokeAsync(async () =>
+    {
+        var state = await task;
+        if (state.User.Identity?.IsAuthenticated == true || SessionEnd.Reason == SessionEndReason.None || _endingSession)
+            return;
+        _endingSession = true;
+        if (_logout is not null)
+            await _logout.SubmitAsync(SessionEnd.Reason == SessionEndReason.Replaced ? "replaced" : "expired");
+    });
+
+    public void Dispose() => AuthStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
 
     internal static string DisplayName(ClaimsPrincipal user) =>
         user.FindFirst(AuthClaimTypes.DisplayName)?.Value ?? user.Identity?.Name ?? "User";

@@ -13,7 +13,9 @@ public sealed class AppRevalidatingAuthStateProvider(
     ILoggerFactory loggerFactory,
     IServiceScopeFactory scopeFactory,
     IOptions<AuthSettings> options,
-    TimeProvider clock) : RevalidatingServerAuthenticationStateProvider(loggerFactory)
+    TimeProvider clock,
+    SessionEndState endState,
+    EndedSessions endedSessions) : RevalidatingServerAuthenticationStateProvider(loggerFactory)
 {
     protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(options.Value.RevalidationMinutes);
 
@@ -25,6 +27,15 @@ public sealed class AppRevalidatingAuthStateProvider(
         // The provider lives as long as the circuit; use a fresh scope so a scoped DbContext isn't held open.
         await using var scope = scopeFactory.CreateAsyncScope();
         var store = scope.ServiceProvider.GetRequiredService<IAuthUserStore>();
-        return await SessionValidation.IsValidAsync(state.User, store, options.Value, clock.GetUtcNow(), ct);
+        var guard = scope.ServiceProvider.GetService<ISingleSessionGuard>();
+        var reason = await SessionValidation.CheckAsync(state.User, store, guard, options.Value, clock.GetUtcNow(), ct);
+        if (reason == SessionEndReason.None)
+            return true;
+
+        // DashboardLayout reads the reason and posts the sign-out form; until then, the cookie
+        // is refused on its next HTTP request (EndedSessions), not only after RevalidationMinutes.
+        endState.Reason = reason;
+        endedSessions.Add(state.User.FindFirst(AuthClaimTypes.SessionId)?.Value, reason);
+        return false;
     }
 }

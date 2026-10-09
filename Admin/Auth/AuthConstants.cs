@@ -26,6 +26,9 @@ public static class AuthConstants
 
     // Browsers cache JS modules loaded with import() very aggressively; bump the version
     // whenever wwwroot/js/auth.js changes so every user gets the new file.
+    // HttpContext.Items key: why CookieValidator rejected the cookie, added to the login redirect as ?reason=.
+    public const string EndReasonItem = "qps.session.end";
+
     public const string AuthScriptUrl = "./js/auth.js?v=2026092902";
 }
 
@@ -37,4 +40,5 @@ public static class AuthClaimTypes
     public const string AccountType = "account_type";   // "Employee" or "Vendor"
     public const string MustChangePassword = "must_change_password";   // "true" when present
     public const string Module = "qps_module";                          // one claim per module, e.g. "User_Management"
+    public const string SessionId = "qps_sid";   // this sign-in's id (the single-session token when that is on)
 }

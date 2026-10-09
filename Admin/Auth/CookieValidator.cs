@@ -25,7 +25,14 @@ internal static class CookieValidator
 
         if (!AuthClaims.IsWithinAbsoluteLifetime(principal, settings, now))
         {
-            await RejectAsync(context);
+            await RejectAsync(context, SessionEndReason.Expired);
+            return;
+        }
+
+        // Already found ended by an open page's check (in memory, so checked on every request).
+        if (services.GetRequiredService<EndedSessions>().TryGet(principal.FindFirst(AuthClaimTypes.SessionId)?.Value, out var ended))
+        {
+            await RejectAsync(context, ended);
             return;
         }
 
@@ -35,9 +42,11 @@ internal static class CookieValidator
             return;
 
         var store = services.GetRequiredService<IAuthUserStore>();
-        if (!await SessionValidation.IsValidAsync(principal, store, settings, now, context.HttpContext.RequestAborted))
+        var guard = services.GetService<ISingleSessionGuard>();
+        var reason = await SessionValidation.CheckAsync(principal, store, guard, settings, now, context.HttpContext.RequestAborted);
+        if (reason != SessionEndReason.None)
         {
-            await RejectAsync(context);
+            await RejectAsync(context, reason);
             return;
         }
 
@@ -45,8 +54,10 @@ internal static class CookieValidator
         context.ShouldRenew = true;
     }
 
-    private static async Task RejectAsync(CookieValidatePrincipalContext context)
+    private static async Task RejectAsync(CookieValidatePrincipalContext context, SessionEndReason reason)
     {
+        // Shown on the login page as ?reason=replaced / expired (see AuthServiceCollectionExtensions).
+        context.HttpContext.Items[AuthConstants.EndReasonItem] = reason == SessionEndReason.Replaced ? "replaced" : "expired";
         context.RejectPrincipal();
         await context.HttpContext.SignOutAsync(context.Scheme.Name);
     }

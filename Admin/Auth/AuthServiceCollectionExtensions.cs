@@ -31,6 +31,9 @@ public static class AuthServiceCollectionExtensions
         services.AddSingleton<ICaptchaGenerator, VmmCaptchaGenerator>();   // company VmmCaptcha library
         services.AddSingleton<CaptchaService>();
         services.AddSingleton<LandingPageResolver>();
+        services.AddSingleton<EndedSessions>();
+        services.AddSingleton<LoginNotices>();
+        services.AddScoped<SessionEndState>();   // per circuit
         services.AddSingleton<Admin.Navigation.AppMenu>();
         services.AddAuthorization(AppPolicies.Register);   // adds to any AddAuthorization in Program.cs
         // How passwords are checked: vendors by the stored hash, employees by IEmployeeAuthApi (register yours).
@@ -70,6 +73,9 @@ public static class AuthServiceCollectionExtensions
     {
         if (ctx.Request.Path.StartsWithSegments("/api"))
             ctx.Response.StatusCode = status;
+        else if (ctx.HttpContext.Items[AuthConstants.EndReasonItem] is string reason)
+            // The cookie was just rejected: tell the login page why ("signed in on another device").
+            ctx.Response.Redirect(Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(ctx.RedirectUri, "reason", reason));
         else
             ctx.Response.Redirect(ctx.RedirectUri);
         return Task.CompletedTask;

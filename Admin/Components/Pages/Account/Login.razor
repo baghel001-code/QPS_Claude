@@ -165,10 +165,16 @@
             "idle" => "You were signed out after a period of inactivity.",
             "signedout" => "You have been signed out.",
             "reset" => "Your password has been changed. Sign in with your new password.",
+            "replaced" => "You were signed out because your account was signed in on another device.",
+            "expired" => "Your session has ended. Please sign in again.",
             _ => null,
         };
-        if (Error == "expired")
-            _error = "Sign-in took too long to complete. Please try again.";
+        _error = Error switch
+        {
+            "expired" => "Sign-in took too long to complete. Please try again.",
+            "unavailable" => "Sign-in is temporarily unavailable. Please try again in a few minutes.",
+            _ => null,
+        };
     }
 
     private async Task SignInAsync()

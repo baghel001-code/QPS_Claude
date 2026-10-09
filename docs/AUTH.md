@@ -246,6 +246,86 @@ public sealed class QpsEmployeeAuthApi(/* your API client */) : IEmployeeAuthApi
 If the API can't tell "wrong password" from "server error", return `null` only for the
 wrong-password response and throw for everything else.
 
+## One session per user (no sign-in on two devices)
+
+Optional. Switch it on by registering an `ISingleSessionGuard` (`Admin/Auth/SingleSession.cs`)
+that wraps your existing session-token service:
+
+| When | Where | Guard method | Your service |
+|---|---|---|---|
+| Sign-in (real HTTP request) | `AccountEndpoints.CompleteLoginAsync` | `StartAsync` | `HasActiveSessionAsync` + `IssueNewSessionAsync` |
+| Every `RevalidationMinutes` (open pages and HTTP requests) | `SessionValidation.CheckAsync` | `IsCurrentAsync` | `IsSessionValidAsync` |
+| Sign-out / idle | `AccountEndpoints.LogoutAsync` | `EndAsync` | your "end session" call |
+
+- The token goes into the cookie as the claim `qps_sid`.
+- New device: if another session existed, the first page shows "Your account was signed in on another
+  device…". This replaces `Session["LoginNotice"]` (an interactive page can't read Session); the
+  notice is kept in `LoginNotices`, keyed by the new session id, for 2 minutes.
+- Old device: at the next check its page signs out (`DashboardLayout` posts the sign-out form with
+  reason `replaced`) and the login page says "You were signed out because your account was signed in
+  on another device." Its cookie is refused on the next HTTP request too (`EndedSessions`).
+- How quickly the old device is signed out = `Auth:RevalidationMinutes`. Use `1` if 5 minutes is too long
+  (each check is one `IsSessionValidAsync` call per open tab).
+
+```csharp
+// Program.cs
+builder.Services.AddScoped<ISingleSessionGuard, QpsSingleSessionGuard>();
+```
+
+Adapter sketch (names of your service and request type may differ):
+
+```csharp
+public sealed class QpsSingleSessionGuard(
+    ISessionTokenService sessionTokenService,
+    IUserValidationService userValidationService,
+    ILogger<QpsSingleSessionGuard> logger) : ISingleSessionGuard
+{
+    public async Task<StartedSession> StartAsync(AuthUser user, SessionClient client, CancellationToken ct)
+    {
+        var request = Request(user.Id, user.UserName, user.AccountType, token: null, clientInfo: await DescribeAsync(client));
+        var hadExistingSession = await sessionTokenService.HasActiveSessionAsync(request);
+        var sessionToken = await sessionTokenService.IssueNewSessionAsync(request);   // ends the old one
+        return new StartedSession(sessionToken, hadExistingSession);
+    }
+
+    public async Task<bool> IsCurrentAsync(SessionOwner session, CancellationToken ct)
+    {
+        try
+        {
+            return await userValidationService.IsSessionValidAsync(
+                Request(session.UserId, session.UserName, session.AccountType, session.Token, null), ct);
+        }
+        catch (Exception ex) when (!ct.IsCancellationRequested)
+        {
+            logger.LogWarning(ex, "Session check failed; keeping {UserId} signed in until the next check", session.UserId);
+            return true;   // DB/API hiccup must not sign everyone out
+        }
+    }
+
+    public Task EndAsync(SessionOwner session, CancellationToken ct) =>
+        // Your "end session" method; it must end only this token.
+        sessionTokenService.EndSessionAsync(Request(session.UserId, session.UserName, session.AccountType, session.Token, null));
+
+    private static IssueSessionRequest Request(string authUserId, string userCode, AccountType type, string? token, string? clientInfo)
+    {
+        UserLoginRecord.TryParseId(authUserId, out _, out var id);           // "V:88" → 88
+        var userType = type == AccountType.Vendor ? "VENDOR" : "EMPLOYEE";  // the values your table uses
+        return new IssueSessionRequest(userType, userCode, (int)id, token, clientInfo);
+    }
+
+    private static async Task<string> DescribeAsync(SessionClient client)
+    {
+        var host = "";
+        if (System.Net.IPAddress.TryParse(client.IpAddress, out var ip))
+        {
+            try { host = (await System.Net.Dns.GetHostEntryAsync(ip)).HostName; }   // reverse DNS can be slow
+            catch (System.Net.Sockets.SocketException) { }
+        }
+        return $"{client.IpAddress} / {host}";
+    }
+}
+```
+
 ## Database (implement `IAuthUserStore`)
 
 **Employee and vendor accounts.** The login page has an Employee tab and a Vendor tab, and
