@@ -1,3 +1,4 @@
+@using Admin.Components.Account
 @using Admin.Services
 @using Application.Interfaces.V1.User
 @using Application.Services.User
@@ -11,9 +12,11 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IUserActivityState Activity
 @inject ISessionInvalidationState InvalidationState
-@inject AppConfigurationSettings Settings
+@inject Microsoft.Extensions.Options.IOptions<Admin.Auth.AuthSettings> AuthOptions
 
-@* Place once in MainLayout.razor. Renders nothing until the warning is due. *@
+@* Place once in MainLayout.razor. Renders nothing visible until the warning is due. *@
+<LogoutForm @ref="_logoutForm" />
+
 @if (_showWarning)
 {
     <MudOverlay Visible="true" DarkBackground="true" ZIndex="10000">
@@ -32,7 +35,7 @@
 }
 
 @code {
-    private const string LogoutUrl = "/Account/User-Logout";
+    private LogoutForm? _logoutForm;
     private const string KeepAliveUrl = "api/session/keepalive";
     private const string ScriptUrl = "js/idle-timeout.js";
 
@@ -54,7 +57,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _idleTimeout = TimeSpan.FromMinutes(Math.Max(Settings.MaxSessionTime, 1));
+        // Same limit as the auth cookie and the server-side idle check (Auth:IdleTimeoutMinutes),
+        // so the warning always comes before either of them signs the user out.
+        _idleTimeout = TimeSpan.FromMinutes(Math.Max(AuthOptions.Value.IdleTimeoutMinutes, 1));
 
         // Must stay well under half the cookie lifetime so sliding expiration always renews.
         _keepAliveInterval = TimeSpan.FromTicks(Math.Clamp(_idleTimeout.Ticks / 4,
@@ -160,9 +165,9 @@
         if (idle)
             InvalidationState.Reason = SessionInvalidReason.IdleTimeout;
 
-        // forceLoad = true so the logout endpoint runs over HTTP and clears the auth cookie.
-        // Without it the circuit is anonymous but F5 would sign the user straight back in.
-        Nav.NavigateTo(idle ? $"{LogoutUrl}?reason=idle" : LogoutUrl, forceLoad: true);
+        // A real HTTP POST to /account/sign-out clears the auth cookie. Without it the circuit
+        // is anonymous but F5 would sign the user straight back in.
+        _ = _logoutForm?.SubmitAsync(idle ? "idle" : "");
     }
 
     private void OnAuthenticationStateChanged(Task<AuthenticationState> task)

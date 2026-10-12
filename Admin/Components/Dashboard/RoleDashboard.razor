@@ -1,0 +1,111 @@
+@using MudBlazor
+
+@* Renders a dummy dashboard from a DashboardDefinition (DashboardCatalog). *@
+<DashboardHeader Title="@Definition.Title" Subtitle="@Definition.Subtitle">
+    @if (Definition.Badge is not null)
+    {
+        <span class="qps-proto-badge" style="color:var(--qps-blue);border-color:#b9d3ea">@Definition.Badge</span>
+    }
+    @foreach (var a in Definition.Actions)
+    {
+        <MudButton Href="@a.Href" StartIcon="@a.Icon"
+                   Variant="@(a.Primary ? Variant.Filled : Variant.Outlined)"
+                   Color="@(a.Primary ? Color.Primary : Color.Secondary)">@a.Label</MudButton>
+    }
+</DashboardHeader>
+
+<div class="qps-kpis">
+    @foreach (var k in Definition.Kpis)
+    {
+        <KpiTile Label="@k.Label" Value="@k.Value" Note="@k.Note" Tone="@k.Tone" Icon="@k.Icon" />
+    }
+</div>
+
+<div class="qps-grid-2">
+    <DashCard Title="@Definition.Table.Title">
+        <Action>
+            @if (Definition.Table.Link is not null)
+            {
+                <MudLink Href="@Definition.Table.Link" Typo="Typo.body2">View all</MudLink>
+            }
+        </Action>
+        <ChildContent>
+            <div class="qps-table-wrap">
+                <table class="qps-table">
+                    <thead><tr>@foreach (var c in Definition.Table.Columns) { <th>@c</th> }</tr></thead>
+                    <tbody>
+                        @foreach (var row in Definition.Table.Rows)
+                        {
+                            <tr>
+                                @for (var i = 0; i < row.Length; i++)
+                                {
+                                    if (i == row.Length - 1 && HasStatusColumn)
+                                    {
+                                        <td><StatusChip Status="@row[i]" /></td>
+                                    }
+                                    else
+                                    {
+                                        <td class="@(LooksNumeric(row[i]) ? "num" : null)">@row[i]</td>
+                                    }
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </ChildContent>
+    </DashCard>
+
+    <DashCard Title="@Definition.Side.Title">
+        <Action>
+            @if (Definition.Side.Link is not null)
+            {
+                <MudLink Href="@Definition.Side.Link" Typo="Typo.body2">View all</MudLink>
+            }
+        </Action>
+        <ChildContent>
+            @if (Definition.Side.Kind == SideKind.Bars)
+            {
+                var max = Definition.Side.Max ?? Math.Max(1, Definition.Side.Items.Max(x => x.Value));
+                <ul class="qps-bars">
+                    @foreach (var b in Definition.Side.Items)
+                    {
+                        <li title="@($"{b.Label}: {b.Value}{Definition.Side.Suffix}")">
+                            <span class="qps-bar-label">@b.Label</span>
+                            <span class="qps-bar-track"><span class="qps-bar-fill" style="width:@((b.Value / max * 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></span></span>
+                            <span class="qps-bar-value num">@($"{b.Value}{Definition.Side.Suffix}")</span>
+                        </li>
+                    }
+                </ul>
+                @if (Definition.Side.Hint is not null)
+                {
+                    <p class="qps-muted">@Definition.Side.Hint</p>
+                }
+            }
+            else
+            {
+                <ul class="qps-list">
+                    @foreach (var item in Definition.Side.Items)
+                    {
+                        <li>
+                            <span><b>@item.Label</b>@if (item.Detail.Length > 0) { <br /><small>@item.Detail</small> }</span>
+                            @if (item.Status is not null)
+                            {
+                                <StatusChip Status="@item.Status" />
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </ChildContent>
+    </DashCard>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public DashboardDefinition Definition { get; set; } = default!;
+
+    private bool HasStatusColumn => Definition.Table.Columns.Length > 0 && Definition.Table.Columns[^1] == "Status";
+
+    // IDs, PO numbers, dates and times line up better in tabular figures.
+    private static bool LooksNumeric(string s) => s.Length > 0 && (char.IsDigit(s[0]) || (s.Length > 3 && s[2] == '-' && char.IsUpper(s[0])));
+}

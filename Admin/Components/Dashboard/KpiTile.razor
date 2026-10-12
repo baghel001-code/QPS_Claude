@@ -1,0 +1,22 @@
+@using MudBlazor
+
+@* One number on a dashboard. Tone: pink, blue, green, amber, red. *@
+<div class="qps-kpi qps-tone-@Tone">
+    <div class="qps-kpi-icon"><MudIcon Icon="@Icon" /></div>
+    <div>
+        <div class="qps-kpi-label">@Label</div>
+        <div class="qps-kpi-value">@Value</div>
+        @if (Note is not null)
+        {
+            <div class="qps-kpi-note">@Note</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+    [Parameter, EditorRequired] public string Icon { get; set; } = "";
+    [Parameter] public string? Note { get; set; }
+    [Parameter] public string Tone { get; set; } = "blue";
+}

@@ -1,0 +1,76 @@
+@*
+    Decorative scene for the sign-in panel: cartons arriving, a QC checklist, a magnifier
+    over a garment tag and a "QC PASSED" stamp. Pure SVG, styled by wwwroot/css/auth.css.
+*@
+<svg class="qps-art" viewBox="0 0 480 360" role="img" aria-label="Cartons being checked against a quality checklist and stamped QC passed">
+    <!-- floor -->
+    <ellipse cx="240" cy="330" rx="210" ry="16" class="a-shadow" />
+
+    <!-- carton stack -->
+    <g class="a-cartons">
+        <rect x="46" y="226" width="120" height="96" rx="4" class="a-box" />
+        <rect x="46" y="226" width="120" height="14" class="a-box-top" />
+        <rect x="100" y="226" width="12" height="40" class="a-tape" />
+        <rect x="62" y="280" width="46" height="26" rx="2" class="a-label" />
+        <rect x="68" y="287" width="30" height="3" class="a-ink" />
+        <rect x="68" y="294" width="20" height="3" class="a-ink" />
+
+        <rect x="172" y="250" width="92" height="72" rx="4" class="a-box" />
+        <rect x="172" y="250" width="92" height="12" class="a-box-top" />
+        <rect x="212" y="250" width="12" height="32" class="a-tape" />
+
+        <rect x="70" y="152" width="96" height="74" rx="4" class="a-box" />
+        <rect x="70" y="152" width="96" height="12" class="a-box-top" />
+        <rect x="112" y="152" width="12" height="32" class="a-tape" />
+        <rect x="84" y="196" width="40" height="20" rx="2" class="a-label" />
+        <!-- barcode -->
+        <g class="a-ink">
+            <rect x="88" y="200" width="2" height="12" /><rect x="92" y="200" width="1" height="12" />
+            <rect x="95" y="200" width="3" height="12" /><rect x="100" y="200" width="1" height="12" />
+            <rect x="103" y="200" width="2" height="12" /><rect x="107" y="200" width="1" height="12" />
+            <rect x="110" y="200" width="3" height="12" /><rect x="115" y="200" width="1" height="12" />
+        </g>
+    </g>
+
+    <!-- clipboard checklist -->
+    <g class="a-float">
+        <rect x="286" y="70" width="150" height="196" rx="12" class="a-board" />
+        <rect x="298" y="84" width="126" height="170" rx="6" class="a-paper" />
+        <rect x="332" y="60" width="58" height="22" rx="6" class="a-clip" />
+        <rect x="312" y="100" width="70" height="6" rx="3" class="a-ink" />
+
+        <circle cx="318" cy="130" r="9" class="a-ok" /><path d="M313 130 l4 4 l7 -8" class="a-tick" />
+        <rect x="334" y="126" width="74" height="7" rx="3.5" class="a-line" />
+        <circle cx="318" cy="160" r="9" class="a-ok" /><path d="M313 160 l4 4 l7 -8" class="a-tick" />
+        <rect x="334" y="156" width="60" height="7" rx="3.5" class="a-line" />
+        <circle cx="318" cy="190" r="9" class="a-ok" /><path d="M313 190 l4 4 l7 -8" class="a-tick" />
+        <rect x="334" y="186" width="68" height="7" rx="3.5" class="a-line" />
+        <circle cx="318" cy="220" r="9" class="a-wait" />
+        <rect x="334" y="216" width="50" height="7" rx="3.5" class="a-line" />
+    </g>
+
+    <!-- magnifier over a garment tag -->
+    <g class="a-float a-delay">
+        <path d="M196 96 l40 0 l12 14 l0 40 l-52 0 z" class="a-tag" />
+        <circle cx="236" cy="108" r="3.5" class="a-hole" />
+        <rect x="204" y="122" width="30" height="4" rx="2" class="a-ink" />
+        <rect x="204" y="132" width="20" height="4" rx="2" class="a-ink" />
+        <circle cx="222" cy="126" r="38" class="a-lens" />
+        <circle cx="222" cy="126" r="38" class="a-ring" />
+        <line x1="249" y1="153" x2="276" y2="180" class="a-handle" />
+    </g>
+
+    <!-- QC PASSED stamp -->
+    <g class="a-stamp" transform="rotate(-14 424 276)">
+        <circle cx="424" cy="276" r="36" class="a-stamp-bg" />
+        <circle cx="424" cy="276" r="36" class="a-stamp-ring" />
+        <circle cx="424" cy="276" r="29" class="a-stamp-ring thin" />
+        <text x="424" y="275" text-anchor="middle" class="a-stamp-text">QC</text>
+        <text x="424" y="290" text-anchor="middle" class="a-stamp-small">PASSED</text>
+    </g>
+
+    <!-- sparkles -->
+    <circle cx="190" cy="40" r="4" class="a-dot" />
+    <circle cx="456" cy="120" r="3" class="a-dot" />
+    <circle cx="30" cy="130" r="3" class="a-dot" />
+</svg>

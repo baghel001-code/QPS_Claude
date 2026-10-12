@@ -121,10 +121,25 @@ builder.Services.AddSession(options =>
 });
 builder.Services.AddCascadingAuthenticationState();
 //builder.Services.AddAuthorizationCore();
+// Paths the fallback policy lets through without a login. Add an entry here for any endpoint
+// you cannot put [AllowAnonymous] on (framework/library endpoints, plain files, health checks).
+// Matching is by path segment: "/_blazor" covers "/_blazor/negotiate" but not "/_blazorx".
+string[] anonymousPaths =
+[
+    "/_framework",          // blazor.web.js (served by an endpoint, not UseStaticFiles)
+    "/_blazor",             // Blazor circuit hub; pages still enforce their own [Authorize]
+    "/service-worker.js",
+];
+
 builder.Services.AddAuthorizationCore(options =>
 {
+    // Every endpoint without its own [Authorize]/[AllowAnonymous] needs a signed-in user,
+    // except the paths in anonymousPaths.
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
+        .RequireAssertion(ctx =>
+            ctx.User.Identity?.IsAuthenticated == true ||
+            (ctx.Resource is HttpContext http &&
+             anonymousPaths.Any(p => http.Request.Path.StartsWithSegments(p))))
         .Build();
 });
 builder.Services.AddScoped<Application.Services.MenuService>();
@@ -251,7 +266,10 @@ app.Use(async (context, next) =>
         "style-src 'self' 'unsafe-inline'; " +
         "img-src 'self' data:; " +
         "font-src 'self'; " +
-        "connect-src 'self' wss:; " +
+        // Development adds localhost for Visual Studio Browser Link / hot reload.
+        (app.Environment.IsDevelopment()
+            ? "connect-src 'self' wss: http://localhost:* ws://localhost:* wss://localhost:*; "
+            : "connect-src 'self' wss:; ") +
         "frame-src 'self'; " +
         "media-src 'self';";
     headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";

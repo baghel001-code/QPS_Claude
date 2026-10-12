@@ -1,0 +1,48 @@
+@using Admin.Auth
+@using Microsoft.AspNetCore.Components.Authorization
+
+@* Page heading for dashboards: greeting, title, a "sample data" badge while prototyping, and actions. *@
+<header class="qps-dash-header">
+    <div>
+        <div class="qps-dash-greeting">@Greeting, @_firstName</div>
+        <h1 class="qps-dash-title">@Title</h1>
+        @if (Subtitle is not null)
+        {
+            <p class="qps-dash-sub">@Subtitle</p>
+        }
+    </div>
+    <div class="qps-dash-actions">
+        @if (Prototype)
+        {
+            <span class="qps-proto-badge" title="Figures on this page are examples, not live data">Prototype · sample data</span>
+        }
+        @ChildContent
+    </div>
+</header>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public bool Prototype { get; set; } = true;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string _firstName = "";
+
+    // Not a "switch { < 12 => ... }" expression: in a .razor @code block, "{ <" is read as the start of HTML markup.
+    private static string Greeting
+    {
+        get
+        {
+            var hour = DateTime.Now.Hour;
+            return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = AuthState is null ? null : (await AuthState).User;
+        var name = user?.FindFirst(AuthClaimTypes.DisplayName)?.Value ?? user?.Identity?.Name ?? "";
+        _firstName = name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
+    }
+}

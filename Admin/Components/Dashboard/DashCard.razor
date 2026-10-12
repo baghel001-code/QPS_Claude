@@ -1,0 +1,18 @@
+@* A titled panel on a dashboard. *@
+<section class="qps-card-panel @Class">
+    <header class="qps-card-head">
+        <h2>@Title</h2>
+        @if (Action is not null)
+        {
+            <div class="qps-card-action">@Action</div>
+        }
+    </header>
+    <div class="qps-card-body">@ChildContent</div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? Action { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Class { get; set; }
+}

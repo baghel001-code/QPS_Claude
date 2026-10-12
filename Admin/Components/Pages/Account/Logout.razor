@@ -1,0 +1,44 @@
+@page "/Account/Logout"
+@layout Admin.Components.Layout.AuthLayout
+@rendermode InteractiveServer
+@attribute [AllowAnonymous]
+
+@using Admin.Components.Account
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using MudBlazor
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+
+<PageTitle>Sign out</PageTitle>
+
+@* Opening this page never signs anyone out by itself (that would let any link log users out);
+   the user has to press the button, which sends the antiforgery-protected POST. *@
+<AuthorizeView>
+    <Authorized>
+        <MudText Typo="Typo.h5" Class="mb-2">Sign out</MudText>
+        <MudText Class="mb-6">You're signed in as <b>@context.User.Identity?.Name</b>.</MudText>
+
+        <LogoutForm @ref="_logout" />
+        <MudStack Row="true" Justify="Justify.FlexEnd">
+            <MudButton Href="/" Variant="Variant.Text" Disabled="_busy">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy" OnClick="SignOutAsync">
+                @(_busy ? "Signing out…" : "Sign out")
+            </MudButton>
+        </MudStack>
+    </Authorized>
+    <NotAuthorized>
+        <MudText Typo="Typo.h5" Class="mb-2">You're signed out</MudText>
+        <MudLink Href="/Account/Login">Sign in again</MudLink>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private LogoutForm? _logout;
+    private bool _busy;
+
+    private async Task SignOutAsync()
+    {
+        _busy = true;
+        await _logout!.SubmitAsync();
+    }
+}

@@ -1,0 +1,168 @@
+/* Signed-in pages: DashboardLayout, AppNavMenu and the dashboard building blocks.
+   Colours match auth.css and QpsTheme.cs (from the Vishal Mega Mart logo). */
+.qps-shell {
+    --qps-brand: #ed018b;
+    --qps-primary: #d4007c;
+    --qps-blue: #0f6cb1;
+    --qps-blue-dark: #0a4a7d;
+    --qps-ink: #1d1a24;
+    --qps-muted: #625c6b;
+    --qps-line: #e8e3ec;
+    --qps-bg: #f6f4f7;
+    --qps-ok: #1f8a5c;
+    --qps-warn: #9a6200;
+    --qps-bad: #b4233c;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--qps-ink);
+}
+
+.qps-shell *, .qps-shell *::before, .qps-shell *::after { box-sizing: border-box; }
+
+/* ---------- top bar ---------- */
+.qps-appbar.mud-appbar {
+    background: #fff; color: var(--qps-ink);
+    border-bottom: 1px solid var(--qps-line);
+}
+.qps-appbar::after {   /* thin brand strip under the bar */
+    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px;
+    background: linear-gradient(90deg, var(--qps-brand), var(--qps-blue));
+}
+.qps-appbar-brand { display: flex; align-items: center; gap: 10px; margin-inline-start: 6px; text-decoration: none; color: inherit; }
+.qps-appbar-logo { height: 30px; width: auto; display: block; }
+.qps-appbar-product {
+    padding-inline-start: 10px; border-inline-start: 1px solid var(--qps-line);
+    font-weight: 800; letter-spacing: .08em; color: var(--qps-blue);
+}
+.qps-userchip {
+    display: flex; align-items: center; gap: 10px; padding: 4px 8px 4px 4px;
+    border-radius: 999px; cursor: pointer; transition: background .15s;
+}
+.qps-userchip:hover { background: #f4eef6; }
+.qps-avatar {
+    display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--qps-brand), var(--qps-blue)); color: #fff;
+    font-size: 13px; font-weight: 700;
+}
+.qps-userchip-text { display: flex; flex-direction: column; line-height: 1.2; text-align: left; }
+.qps-userchip-name { font-size: 14px; font-weight: 600; }
+.qps-userchip-sub { font-size: 12px; color: var(--qps-muted); }
+
+/* ---------- left menu ---------- */
+/* Drawer header holds the logo while the drawer is open; same height as the top bar. */
+.qps-drawer-head.mud-drawer-header {
+    position: relative; min-height: 64px; padding: 0 18px; display: flex; align-items: center;
+    border-bottom: 1px solid var(--qps-line);
+}
+.qps-drawer-head::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px;
+    background: linear-gradient(90deg, var(--qps-brand), var(--qps-blue));
+}
+.qps-drawer.mud-drawer { border-inline-end: 1px solid var(--qps-line); }
+.qps-nav { padding: 12px 10px 24px; }
+.qps-nav-section {
+    margin: 18px 12px 6px; font-size: 11px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--qps-muted);
+}
+.qps-nav-section:first-child { margin-top: 4px; }
+.qps-navmenu .mud-nav-link { border-radius: 8px; margin: 1px 0; padding-block: 9px; }
+.qps-navmenu .mud-nav-link.active:not(.mud-nav-link-disabled) {
+    background: #fde6f3; color: var(--qps-primary); font-weight: 600;
+}
+.qps-navmenu .mud-nav-link.active .mud-nav-link-icon { color: var(--qps-primary); }
+.qps-nav-foot { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--qps-line); }
+.qps-navmenu .mud-nav-group .mud-nav-link { padding-block: 7px; font-size: 13.5px; }
+.qps-dash-note { padding: 12px 16px; border: 1px solid #e3c38a; border-radius: 10px; background: #fffaf0; color: #7a5200; font-size: 14px; }
+.qps-nav-soon {
+    margin-inline-start: 8px; padding: 1px 7px; border-radius: 999px;
+    background: #eef2f7; color: var(--qps-muted); font-size: 10.5px; font-weight: 600;
+}
+
+/* ---------- page area ---------- */
+.qps-main { background: var(--qps-bg); min-height: 100vh; display: flex; flex-direction: column; }
+.qps-page { flex: 1; width: 100%; max-width: 1400px; margin: 0 auto; padding: 28px 28px 32px; display: flex; flex-direction: column; gap: 22px; }
+.qps-shell-footer {
+    display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px 16px; border-top: 1px solid var(--qps-line); font-size: 12px; color: var(--qps-muted);
+}
+.qps-shell-version { color: var(--qps-blue); }
+.qps-muted { color: var(--qps-muted); font-size: 14px; margin: 0; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- dashboard header ---------- */
+.qps-dash-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.qps-dash-greeting { font-size: 13px; font-weight: 600; color: var(--qps-blue); margin-bottom: 2px; }
+.qps-dash-title { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; }
+/* Blazor's <FocusOnNavigate Selector="h1"> focuses the page heading after each navigation
+   (so screen readers announce the page). Keep the focus, hide the outline around the heading. */
+.qps-dash-title:focus, .qps-dash-title:focus-visible { outline: none; }
+.qps-dash-sub { margin: 4px 0 0; color: var(--qps-muted); font-size: 14px; max-width: 60ch; }
+.qps-dash-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.qps-proto-badge {
+    padding: 4px 10px; border-radius: 999px; border: 1px dashed #d8b4ca;
+    background: #fff; color: var(--qps-primary); font-size: 12px; font-weight: 600;
+}
+
+/* ---------- KPI tiles ---------- */
+.qps-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.qps-kpi {
+    display: flex; gap: 14px; align-items: flex-start; padding: 18px;
+    background: #fff; border: 1px solid var(--qps-line); border-radius: 12px;
+}
+.qps-kpi-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; flex: none; }
+.qps-kpi-label { font-size: 13px; color: var(--qps-muted); }
+.qps-kpi-value { font-size: 28px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.qps-kpi-note { font-size: 12px; color: var(--qps-muted); margin-top: 2px; }
+.qps-tone-pink .qps-kpi-icon { background: #fde6f3; color: var(--qps-primary); }
+.qps-tone-blue .qps-kpi-icon { background: #e3f0fa; color: var(--qps-blue); }
+.qps-tone-green .qps-kpi-icon { background: #e1f4ea; color: var(--qps-ok); }
+.qps-tone-amber .qps-kpi-icon { background: #fdf1dc; color: var(--qps-warn); }
+.qps-tone-red .qps-kpi-icon { background: #fbe4e8; color: var(--qps-bad); }
+
+/* ---------- panels ---------- */
+.qps-grid-2 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+.qps-card-panel { background: #fff; border: 1px solid var(--qps-line); border-radius: 12px; overflow: hidden; }
+.qps-card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--qps-line); }
+.qps-card-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
+.qps-card-body { padding: 6px 18px 16px; }
+
+.qps-table-wrap { overflow-x: auto; margin: 0 -18px; }
+.qps-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.qps-table th {
+    text-align: left; padding: 10px 18px; font-size: 11.5px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--qps-muted); border-bottom: 1px solid var(--qps-line); white-space: nowrap;
+}
+.qps-table td { padding: 11px 18px; border-bottom: 1px solid #f1edf3; vertical-align: middle; }
+.qps-table tr:last-child td { border-bottom: 0; }
+.qps-table tbody tr:hover { background: #fbf8fc; }
+
+.qps-list { list-style: none; margin: 0; padding: 0; }
+.qps-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1edf3; font-size: 14px; }
+.qps-list li:last-child { border-bottom: 0; }
+.qps-list small { color: var(--qps-muted); font-size: 12.5px; }
+
+.qps-bars { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 10px; }
+.qps-bars li { display: grid; grid-template-columns: 76px 1fr 24px; gap: 10px; align-items: center; font-size: 13px; }
+.qps-bar-track { height: 8px; border-radius: 4px; background: #eef2f7; overflow: hidden; }
+.qps-bar-fill { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--qps-blue), #4d98d4); }
+.qps-bar-value { text-align: right; color: var(--qps-muted); }
+
+/* ---------- status chips ---------- */
+.qps-status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.qps-status-ok { background: #e1f4ea; color: var(--qps-ok); }
+.qps-status-bad { background: #fbe4e8; color: var(--qps-bad); }
+.qps-status-info { background: #e3f0fa; color: var(--qps-blue); }
+.qps-status-wait { background: #fdf1dc; color: var(--qps-warn); }
+
+/* ---------- coming soon ---------- */
+.qps-soon { max-width: 520px; margin: 48px auto; text-align: center; display: grid; gap: 14px; justify-items: center; }
+.qps-soon-icon { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; background: #e3f0fa; color: var(--qps-blue); }
+.qps-soon code { background: #fff; border: 1px solid var(--qps-line); padding: 1px 6px; border-radius: 4px; }
+
+@media (max-width: 1100px) {
+    .qps-grid-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    .qps-page { padding: 18px 14px 24px; }
+    .qps-userchip-text, .qps-appbar-product { display: none; }
+    .qps-dash-title { font-size: 22px; }
+}

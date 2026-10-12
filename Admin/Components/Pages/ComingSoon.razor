@@ -1,0 +1,38 @@
+@page "/coming-soon"
+@layout Admin.Components.Layout.DashboardLayout
+@attribute [Authorize]
+@using Admin.Auth
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject LandingPageResolver Landing
+@using MudBlazor
+
+@* Placeholder for dashboard buttons whose page doesn't exist yet. *@
+<PageTitle>@(Page ?? "Coming soon") · QPS</PageTitle>
+
+<div class="qps-soon">
+    <div class="qps-soon-icon"><MudIcon Icon="@Icons.Material.Outlined.Construction" Style="font-size:44px" /></div>
+    <h1 class="qps-dash-title">@(Page ?? "This page") is on its way</h1>
+    <p class="qps-muted">
+        It's part of the new QPS layout but hasn't been built yet.
+        @if (!string.IsNullOrEmpty(Path))
+        {
+            <span>It will live at <code>@Path</code>.</span>
+        }
+    </p>
+    <MudButton Href="@_dashboard" Variant="Variant.Filled" Color="Color.Primary">Back to my dashboard</MudButton>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "page")] private string? Page { get; set; }
+    [SupplyParameterFromQuery(Name = "path")] private string? Path { get; set; }
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private string _dashboard = "/";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is not null)
+            _dashboard = Landing.For((await AuthState).User);
+    }
+}
