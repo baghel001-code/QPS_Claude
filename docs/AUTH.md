@@ -280,6 +280,40 @@ The adapter is `Admin/Auth/QpsSingleSessionGuard.cs`. It calls the existing `IUs
 | `IsCurrentAsync` | `IsSessionValidAsync` (an error counts as valid until the next check) | VALIDATE_USER_SESSION |
 | `EndAsync` | `ClearSessionAsync` (must clear only the given token) | CLEAR_USER_SESSION |
 
+## Access control (RBAC + ABAC)
+
+Who may open which page and do what is data, not code.
+
+| Piece | Where | Changed by |
+|---|---|---|
+| Resources (pages) and their actions: View, Create, Edit, Approve, Export | `Auth/Access/AccessCatalog.cs`, `Res` constants | Developer (a new page = a new resource) |
+| Role → permission (`Inspection.Ongoing.Edit`) | `auth.RolePermission` | Admin |
+| User exceptions (Grant / Deny; deny wins) | `auth.UserPermission` | Admin |
+| ABAC values: user's regions, categories, DCs, vendors | `auth.UserScope` | Admin |
+| Left menu, each entry linked to a permission | `auth.Menu` | Admin |
+
+- Pages: `@attribute [RequirePermission(Res.InspectionOngoing, PermAction.View)]`.
+- Buttons: `<AuthorizeView Policy="@Perm.Policy(Res.InspectionOngoing, PermAction.Edit)">…</AuthorizeView>`.
+- Code: `await Access.HasAsync(user, Res.PpsRequests, PermAction.Approve)` (`AccessService`).
+- Data (ABAC): `(await Access.GetAsync(user)).Scope(ScopeTypes.Region)` → pass to the stored procedure.
+  Filters always come from the server side, never from the page or URL.
+
+`PermissionPolicyProvider` turns any `perm:<code>` policy name into a policy, so nothing is registered per page.
+Effective permissions = all roles of the user (role ID claims + module flags as `module:User_Management`)
++ user grants − user denies, cached 5 minutes in `AccessService`; call `InvalidateUser(userId)` /
+`InvalidateAll()` after a change. Module flags are treated as roles so the old menu rules still apply.
+
+On an empty database `AccessCatalogSync` writes the resources, the permissions and a default
+(`AccessCatalog.Seed`) that reproduces the old fixed NavMenu, so users see the same menu on day one.
+Tables and queries: `docs/sql/access-control.sql`. Register your store:
+
+```csharp
+builder.Services.AddScoped<IAccessStore, SqlAccessStore>();   // dev default: InMemoryAccessStore
+```
+
+Hiding a menu entry or button is not security: protect every page with `[RequirePermission]`, and let
+the API check the same permission and scope for every call.
+
 ## Database (implement `IAuthUserStore`)
 
 **Employee and vendor accounts.** The login page has an Employee tab and a Vendor tab, and

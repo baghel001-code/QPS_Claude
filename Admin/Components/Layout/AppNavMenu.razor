@@ -4,17 +4,16 @@
 @using MudBlazor
 @inject AppMenu Menu
 
-@* Left menu: Home, then the groups this user gets from AppMenu (role IDs + modules), then Sign out. *@
+@* Left menu: Home, then the groups this user may see (AppMenu: auth.Menu + permissions), then Sign out. *@
 <AuthorizeView>
     <Authorized>
-        @{ var groups = Menu.For(context.User); }
         <nav class="qps-nav" aria-label="Main menu">
             <MudNavMenu Color="Color.Primary" Class="qps-navmenu">
                 <MudNavLink Href="/" Icon="@Icons.Material.Outlined.Home" Match="NavLinkMatch.All">Home</MudNavLink>
-                @foreach (var group in groups)
+                @foreach (var group in _groups)
                 {
                     @* Short menus start expanded; long ones collapsed so the drawer stays scannable. *@
-                    <NavNode Node="group" Expanded="@(groups.Count <= 3)" />
+                    <NavNode Node="group" Expanded="@(_groups.Count <= 3)" />
                 }
             </MudNavMenu>
             <div class="qps-nav-foot">
@@ -29,4 +28,18 @@
 @code {
     /// <summary>Set by DashboardLayout; posts the sign-out form.</summary>
     [Parameter] public EventCallback SignOut { get; set; }
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private IReadOnlyList<MenuNode> _groups = [];
+
+    // Runs on every navigation (the layout re-renders), so access changes show up without a reload.
+    // Cheap: AccessService caches permissions and the menu.
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthState is null)
+            return;
+        var user = (await AuthState).User;
+        _groups = user.Identity?.IsAuthenticated == true ? await Menu.ForAsync(user) : [];
+    }
 }

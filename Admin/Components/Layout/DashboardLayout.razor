@@ -11,7 +11,7 @@
 
 @*
     Shared layout for every page after sign-in: top bar (logo, user menu, sign out) and a
-    left drawer whose menu depends on the user's role IDs and modules (AppNavMenu / AppMenu).
+    left drawer whose menu comes from auth.Menu, filtered by the user's permissions (AppNavMenu / AppMenu).
     Use it with @layout DashboardLayout, or make it the default in Routes.razor:
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.DashboardLayout)" />
     Needs interactive rendering (the drawer toggle and idle timeout run in the circuit).

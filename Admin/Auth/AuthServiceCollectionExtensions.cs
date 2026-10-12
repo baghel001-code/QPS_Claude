@@ -35,6 +35,15 @@ public static class AuthServiceCollectionExtensions
         services.AddSingleton<LoginNotices>();
         services.AddScoped<SessionEndState>();   // per circuit
         services.AddSingleton<Admin.Navigation.AppMenu>();
+
+        // Access control (RBAC + ABAC): "perm:…" policies, permissions per role from IAccessStore.
+        // Register your own store to replace the in-memory default: AddScoped<IAccessStore, SqlAccessStore>().
+        services.AddMemoryCache();
+        services.TryAddSingleton<Access.IAccessStore, Access.InMemoryAccessStore>();
+        services.AddSingleton<Access.AccessService>();
+        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, Access.PermissionPolicyProvider>();
+        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Access.PermissionHandler>();
+        services.AddHostedService<Access.AccessCatalogSync>();
         services.AddAuthorization(AppPolicies.Register);   // adds to any AddAuthorization in Program.cs
         // How passwords are checked: vendors by the stored hash, employees by IEmployeeAuthApi (register yours).
         services.AddScoped<ICredentialVerifier, VendorPasswordVerifier>();
